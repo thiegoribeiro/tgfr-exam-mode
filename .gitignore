@@ -1,0 +1,23 @@
+# Generated release files and isolated test output
+/dist/
+/build/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Actual machine state and diagnostics are not public test fixtures
+session.json
+restored-*.json
+TGFR_ExamMode_v*/
+*.log
+
+# Local editing and transfer metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+upload*.json
+.library_helpers*/
+

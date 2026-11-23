@@ -1,0 +1,84 @@
+name: Bug report
+description: Report a reproducible failure using sanitised device details.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        TGFR Exam Mode is experimental. For vulnerabilities, follow SECURITY.md.
+        Do not upload session.json, candidate documents, credentials, complete policy inventories or raw organisational logs.
+        Replace account/domain names, hostnames, machine/policy identifiers and personal file paths with consistent fictional examples.
+        Keep the original recovery record privately until restoration completes.
+  - type: input
+    id: version
+    attributes:
+      label: Application version
+      placeholder: "For example: 7.0.2"
+    validations:
+      required: true
+  - type: dropdown
+    id: operation
+    attributes:
+      label: Operation
+      options:
+        - Startup / interface
+        - Enable selected
+        - Verify
+        - Restore original state
+        - Policy recovery launcher
+        - Build / simulated tests
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows edition and build
+      description: Include the update level; do not include a real device name.
+      placeholder: "Edition, version, build; or non-Windows development environment"
+    validations:
+      required: true
+  - type: input
+    id: office
+    attributes:
+      label: Office installation
+      description: Version and installation type if Excel or Word is involved; otherwise enter not applicable.
+  - type: textarea
+    id: options
+    attributes:
+      label: Selected options and relevant prerequisites
+      description: Include PowerShell version/language mode where relevant. Summarise existing management policies without uploading them.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Use a minimal sequence and fictional file names.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Sanitised error excerpt
+      description: Include the failing stage and nearby diagnostic lines after removing identifying details.
+      render: text
+  - type: textarea
+    id: recovery
+    attributes:
+      label: Recovery state
+      description: Was a saved session active, was a restart requested, and what happened when Restore or policy recovery was used? Keep the actual journal private.
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Public report check
+      options:
+        - label: I have removed account, organisation, machine and candidate information from this public report.
+          required: true

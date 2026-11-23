@@ -1,0 +1,373 @@
+PUBLIC DISTRIBUTION GUIDE -- prepared 23 November 2026
+Application version and historical test record: 7.0.2.
+
+TGFR EXAM MODE 7.0.2
+Setup, operation, recovery and development notes
+20 November 2026
+
+PATCH 7.0.2 -- WRITABLE POLICY TEMPLATE
+=====================================
+This patch addresses the reported error:
+  Access to the path
+  'C:\windows\schemas\CodeIntegrity\ExamplePolicies\AllowAll.xml'
+  is denied.
+
+The earlier planner handed the protected Windows template directly to
+Merge-CIPolicy. A related Microsoft WDAC Toolkit issue records an input-XML
+access failure, and Microsoft's merged correction copies the XML into a
+temporary folder before merging. That known issue is consistent with the
+code path and the reported error; the screenshot alone does not establish
+which ConfigCI implementation or exact file-open call ran on this device.
+The FileStream(path, mode) constructor implicated in the related report
+requests read/write access, which can fail for a protected input file even
+when the file can be read normally. [10-12]
+
+Version 7.0.2 reads the original template bytes and creates a NEW writable
+AllowAll.work.xml in the temporary build folder for that attempt. ConfigCI
+receives only this working copy. The copy is created without importing the
+source's ReadOnly attribute or security descriptor; the original template,
+its ownership, permissions and attributes are not modified. Both executable
+and package-only planning use the copied template. Microsoft documentation
+also demonstrates copying AllowAll.xml before configuring and compiling
+the working file. [13]
+
+Diagnostics now identify template preparation, rule merging and compilation.
+A failure to read the Windows source reports "Could not read the Windows
+policy template". A failure to create the temporary copy reports "Could not
+create the writable policy-template copy". If reading the source itself is
+actually denied, preserve the complete diagnostics for review: copying
+cannot grant missing read access, and the app does not change system-file
+permissions to bypass it.
+
+The fix occurs during plan construction, before this Enable attempt
+persists a new session or applies policy/network/settings changes. That
+does not establish the state of an earlier session or restore earlier work.
+
+RETAINED FIX FROM 7.0.1
+=======================
+The earlier generic List<Rule> conversion fix remains included. Generated
+collections are explicitly flattened into individual native user-mode Rule
+objects and passed as Rule[] to Merge-CIPolicy. Invalid objects and files
+without user-mode rules stop planning. [8, 9]
+
+TO INSTALL THE PATCH
+1. Close the older TGFR interface.
+2. Extract this release and run TGFR_Exam_Mode_GUI_v7_0_2.bat as administrator.
+3. Confirm that the title and copied diagnostics show version 7.0.2.
+4. If a v7 saved session is already active, use Restore original state first.
+   Keep its session.json; the patch can use the same v7 recovery record.
+5. Select the required options and retry Enable selected. Use Verify and
+   test the selected programs and permitted exam applications locally.
+
+Schema 7, the state directory and the policy ownership name beginning
+"TGFR Exam Mode 7.0" are deliberately preserved. The unchanged companion
+TGFR_Exam_Mode_Policy_Recovery_v7.bat remains compatible. This patch does not
+reintroduce the previous application backend or change application scope.
+
+WHAT CHANGED IN VERSION 7
+=========================
+Version 7 replaces the application-control implementation. It uses Windows
+App Control for Business (WDAC), ConfigCI and CiTool for Calculator, Microsoft
+Store and desktop Excel. The distributed program and recovery launcher contain
+no AppLocker commands, AppLocker policy operations, Application Identity
+service checks or service-startup changes.
+
+The earlier screenshot from 6.1.1 showed a stopped service with existing
+enforced collections: Appx=Enabled/2 rules and Exe=NotConfigured/4 rules.
+That was a prerequisite refusal in the earlier implementation. Version 7
+does not use that implementation or its service prerequisite.
+
+The important scope change is that application blocks now affect ALL USERS
+OF THE COMPUTER, including administrators. The interface therefore removes
+the account selector and labels the device-wide scope clearly.
+
+FILES
+=====
+TGFR_Exam_Mode_GUI_v7_0_2.bat
+  The complete application. Embedded Windows PowerShell; no Python or
+  separate PS1 file is required on the Windows device.
+
+TGFR_Exam_Mode_Policy_Recovery_v7.bat
+  A separate recovery launcher for an active v7 session when the normal GUI
+  cannot start. It removes only the policy recorded by that v7 session.
+  It retains the journal; normal Restore must then finish recovery.
+
+USER_GUIDE.txt
+  This guide.
+
+DEVELOPMENT_JOURNAL.txt
+  Historical releases, issues, decisions, testing evidence and fingerprints.
+
+TGFR_Exam_Mode_v7_0_2_Public_Source.zip
+  Readable production modules, regression fixtures and a developer build
+  script that reproduces both BAT files. Not needed to run the application.
+
+SHA256SUMS.txt
+  SHA-256 fingerprints for the files in this release bundle.
+
+REQUIREMENTS
+============
+- Application blocks: Windows 11 22H2 or later, with native CiTool.exe and
+  the ConfigCI Windows PowerShell module available. CiTool is included in
+  Windows 11 from version 22H2. [1]
+- Run the BAT as administrator. It uses built-in Windows PowerShell 5.1.
+- Use an ordinary desktop Office installation for Excel-only blocking.
+  An MSIX-packaged Office suite shares a package identity with other Office
+  applications; this design refuses to block the whole suite as "Excel".
+- Close selected applications in every signed-in user session first.
+- The normal GUI requires PowerShell FullLanguage. The separate recovery
+  launcher is designed to operate under ConstrainedLanguage as well.
+
+FIRST USE
+=========
+1. Extract the release ZIP into a local folder.
+2. If an older TGFR release has an active saved session, restore it with
+   that original release before enabling version 7. The new version detects
+   earlier recovery files but does not import their application backend.
+   Do not delete an older journal to make the warning disappear.
+3. Right-click TGFR_Exam_Mode_GUI_v7_0_2.bat and select Run as administrator.
+4. Select the restrictions required for the exam.
+5. If preparing a Word exam copy, select the source or a blank document
+   and choose a NEW local output .docx filename on the Word tab.
+6. Select Enable selected and read the all-users scope confirmation.
+7. Use Verify, then test actual launches of the selected blocked programs
+   and the permitted exam applications on the Windows device.
+
+Use a spare or pilot exam device for the first deployment. Existing device
+policies remain independently managed and can affect the resulting behaviour.
+Configuration verification does not replace Windows launch testing.
+
+FEATURE SCOPE
+=============
+Calculator
+  Denies the Microsoft.WindowsCalculator package family across versions,
+  covering the modes supplied by that app. Discovered classic Calculator
+  executables receive file-identity rules as well. Browser calculators and
+  unrelated third-party calculator programs are outside the named targets.
+
+Microsoft Store
+  Denies the Microsoft.WindowsStore package family. This blocks the named
+  Store application; it is not a general prohibition on every installation
+  route such as a browser, software-management platform or installer.
+
+Microsoft Excel
+  Discovers desktop Excel using App Paths and standard Office locations.
+  Validates the executable's role before generating narrow publisher/file
+  rules. A stale registration pointing to Word is rejected. Exact hashes
+  are used where suitable file-name/signature metadata is unavailable.
+  Hash rules require re-preparation after the affected binary changes.
+  Web Excel and shared-identity packaged Office are outside this desktop
+  Excel-only implementation.
+
+Wi-Fi and Ethernet
+  Disable identified physical adapters and record their GUIDs and original
+  administrative states. Restore preserves adapters that were already
+  disabled before the exam. New adapters and other network paths are not
+  automatically added to an active session. Disabling both connections can
+  disconnect remote support, so perform network testing locally.
+
+VPN Settings
+  Hides the Windows VPN Settings page using a device-level visibility value.
+  This does not block VPN traffic or third-party VPN programs. The app merges
+  compatible existing visibility settings and records the original value.
+  Independently changed values are preserved for review during Restore.
+
+Word proofing
+  Prepares a separate .docx copy with w:noProof=true on supported text,
+  paragraph marks, styles and defaults. Open THAT copy for the examination.
+  The original document is not overwritten. Confirm the "Do not check
+  spelling or grammar" setting and test typing/F7 in desktop Word.
+  This is document formatting, not an Office-wide proofing lock. Pasting
+  formatted text or changing formatting can re-enable checking. It does not
+  disable proofing in another document, PowerPoint, Outlook, Office web,
+  AutoCorrect or third-party add-ins. Restore retains student answer files.
+
+Interface
+  Resizable window, working-area placement, DPI handling, scrollable tabs,
+  docked action/status area and wrapped diagnostic messages. The displayed
+  saved-session status is not continuous enforcement monitoring.
+
+NORMAL RESTORE
+==============
+1. Select Restore original state in the application.
+2. Networking and recorded settings are restored even if application-policy
+   removal later needs attention.
+3. The app checks its saved policy ownership and fingerprint, then requests
+   removal of only that policy ID through CiTool.
+4. If Windows reports the policy still active or persisted, the journal is
+   retained. Follow the restart message, then run Restore again.
+5. Completed recovery archives the session journal instead of discarding
+   the baseline. Student answer documents are retained.
+
+Unsigned-policy removal without a restart is supported from the Windows 11
+2024 update / 24H2. Earlier supported builds can require a restart to finish
+removal. The app never restarts Windows automatically. [2]
+
+An inactive historical inventory entry is accepted as removed only when it
+is no longer enforced, no longer on disk, and its installed file is absent.
+An unlisted policy file that is still present is reported as incomplete
+recovery. The app does not delete policy files to bypass an error.
+
+IF THE NORMAL GUI WILL NOT OPEN DURING A V7 SESSION
+=================================================
+Run TGFR_Exam_Mode_Policy_Recovery_v7.bat as administrator.
+
+It reads the protected v7 journal, verifies this machine and session, checks
+the exact recorded policy GUID against the original and current inventories,
+requires a non-system unsigned policy, and compares the installed file's
+fingerprint. It then asks CiTool to remove only that policy.
+
+This launcher can execute its command in PowerShell ConstrainedLanguage.
+It does not change the language mode or any outside policy. A policy that
+blocks PowerShell or the native management tool entirely can still require
+the organisation's management/recovery process.
+
+The launcher deliberately leaves the session journal and network/settings
+state intact. After its policy removal and any required restart, reopen the
+normal GUI and select Restore to finish restoring networking and settings.
+Do not interpret policy-only recovery as completion of the whole session.
+
+STATE AND OWNERSHIP
+===================
+Current journal:
+  %ProgramData%\TGFR_ExamMode_v7\session.json
+
+The v7 journal uses schema 7 and a separate directory from v6. Its directory
+and journal file are restricted to Administrators and SYSTEM. The journal
+records the machine ID, session ID, original settings, selected operations,
+owned policy GUID/name/XML/binary/fingerprint, and original policy inventory.
+It is saved before applying the generated policy or network/settings changes.
+
+Existing Windows and organisation policies are preserved. The new policy is
+a separate base policy with broad allowance baselines and only the selected
+application denies. Its allow baseline does not override restrictions from
+other independent base policies. [3]
+
+The generated policy is unsigned and enforced. It includes user-mode and
+packaged-application enforcement, disables script enforcement within this
+policy, leaves COM registration allowed within this policy, and does not
+change memory-integrity configuration. External policies may still influence
+PowerShell and other application behaviour; this app does not rewrite them.
+
+Every removal requires both the session's own deployment record and current
+policy identity. IsSystemPolicy=false alone is insufficient. Windows-managed
+policies, signed policies, ownership mismatches and changed policy bytes are
+not removed by this temporary-policy recovery path. [1, 2]
+
+COMMAND-LINE ACTIONS
+====================
+TGFR_Exam_Mode_GUI_v7_0_2.bat
+TGFR_Exam_Mode_GUI_v7_0_2.bat verify
+TGFR_Exam_Mode_GUI_v7_0_2.bat restore
+TGFR_Exam_Mode_GUI_v7_0_2.bat help
+
+IF ENABLE OR RESTORE REPORTS AN ERROR
+====================================
+Use Diagnostics > Copy diagnostics. The policy planner records the Windows
+build, existing-policy count, owned policy ID and discovered target details.
+Send the complete error and surrounding diagnostic lines, including whether
+the operation was Enable, Verify or Restore.
+
+A preflight failure occurs before the selected machine changes. A failure
+after applying changes attempts rollback and retains recovery when rollback
+is incomplete. Preserve the v7 journal and any reported policy files.
+The protected journal can contain machine identity and policy information;
+do not treat it as an anonymous diagnostic file.
+
+VALIDATION AND PRACTICAL LIMITS
+==============================
+The release was developed with PowerShell 7.4 on Linux. Windows boundaries
+were simulated for logic tests. The final validation totals and artifact
+fingerprints are recorded in the accompanying development journal.
+
+Version 7.0's prior checks passed: 66 application-control assertions,
+39 engine assertions, 62 constrained-language recovery assertions, five UI
+callback scenarios, ten window-placement cases and a seven-source/payload
+backend-removal gate. The exact recovery bootstrap ran under
+ConstrainedLanguage with Windows boundaries simulated.
+
+Patch 7.0.2 validation:
+Four baseline assertions reproduced the protected-input failure at the
+  simulated ConfigCI boundary. All 25 new template-access assertions passed:
+  exact source bytes/BOM/CRLF and original ReadOnly attribute are preserved;
+  the fresh copy is writable and its exclusive stream closes correctly;
+  executable and package-only plans use staged input; failures clean up;
+  an actually locked source produces the distinct read error before ConfigCI;
+  an existing destination is not overwritten. The 86 rule-binding assertions
+  and 66 application-control assertions were rerun and passed. The seven-input
+  production/payload parse and removed-backend gate passed, and the packaged
+  help action displayed 7.0.2. Recovery bytes remain identical to v7.0.
+  Prior engine, recovery and UI suite totals remain historical; these groups
+  were not rerun for this narrow patch.
+
+Patch 7.0.1 validation (historical release evidence):
+Two baseline assertions reproduced the original nested-list binding error.
+  All 86 new executable-rule regression assertions passed, covering scalar,
+  pipeline, typed-array, generic-list and nested-list output in the hash and
+  file-publisher paths; native object identity, order and user-mode filtering;
+  invalid/empty/kernel-only output; recursion bounds; and per-file completeness.
+  The existing 66 application-control assertions were rerun and passed.
+  The seven-input production/payload parse and removed-backend gate passed,
+  and the packaged help action displayed version 7.0.1. The recovery BAT is
+  byte-identical to v7.0. Prior engine, recovery and UI suite results
+  remain historical; this narrow patch does not claim they were rerun.
+
+The 7.0.1 regression specifically covers the executable-rule planner branch,
+which the earlier package-only planner fixture did not exercise. It models
+a typed ConfigCI rule collection and a Merge-CIPolicy parameter requiring
+Rule[], while leaving the native Windows compiler boundary simulated.
+
+Tests cover policy structure and ownership, exact package denies and allow
+baselines, executable identity guards, apply/verify/restore lifecycle,
+pending-restart recovery, preserved external changes, network rollback,
+retained Word answers, explicit UI callback state and window placement.
+The emergency recovery functions and packaged bootstrap were also exercised
+in an actual ConstrainedLanguage runspace with Windows boundaries simulated.
+
+The Windows ConfigCI compiler, CiTool deployment/removal, actual application
+launch enforcement, native WinForms layout and desktop Word behaviour were
+NOT executed in this development environment. This is a source and logic
+validated release that still needs acceptance testing on the target device.
+
+PRIMARY REFERENCES
+==================
+[1] Microsoft: CiTool commands and policy ownership
+https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/operations/citool-commands
+
+[2] Microsoft: Remove App Control policies
+https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/deployment/disable-appcontrol-policies
+
+[3] Microsoft: Standalone deny policies and independent allow baselines
+https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/design/create-appcontrol-deny-policy
+
+[4] Microsoft: Packaged application rules
+https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/design/manage-packaged-apps-with-appcontrol
+
+[5] Microsoft: Script enforcement
+https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/design/script-enforcement
+
+[6] Microsoft: Allow COM registration within a policy
+https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/design/allow-com-object-registration-in-appcontrol-policy
+
+[7] Microsoft: Word NoProofing property
+https://learn.microsoft.com/en-us/office/vba/api/word.range.noproofing
+
+[8] Microsoft: Merge-CIPolicy; the Rules parameter is Rule[]
+https://learn.microsoft.com/en-us/powershell/module/configci/merge-cipolicy?view=windowsserver2025-ps
+
+[9] Microsoft: New-CIPolicyRule and user-mode rule objects
+https://learn.microsoft.com/en-us/powershell/module/configci/new-cipolicyrule?view=windowsserver2025-ps
+
+[10] Microsoft WDAC Toolkit PR 407: copy protected XML to temporary storage
+https://github.com/MicrosoftDocs/WDAC-Toolkit/pull/407
+
+[11] Microsoft WDAC Toolkit issue 393: input XML access-denied report
+https://github.com/MicrosoftDocs/WDAC-Toolkit/issues/393
+
+[12] Microsoft .NET: FileStream(String, FileMode) constructor
+https://learn.microsoft.com/en-us/dotnet/api/system.io.filestream.-ctor?view=netframework-4.8.1
+
+[13] Microsoft example: copy AllowAll.xml before configuring/compiling it
+https://learn.microsoft.com/en-us/sql/relational-databases/security/encryption/always-encrypted-enclaves-host-guardian-service-register?view=sql-server-ver17
+
+END OF VERSION 7.0.2 GUIDE

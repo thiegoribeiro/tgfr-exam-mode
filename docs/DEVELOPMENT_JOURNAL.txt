@@ -1,0 +1,1685 @@
+PUBLIC EDITION -- 23 November 2026
+This copy preserves the development history while replacing the real domain
+and account identifiers in diagnostic extracts with EXAMPLE\exam-admin.
+That account is fictional. The full operational journal is kept separately.
+Release fingerprints below identify historical application files, not an
+assertion of native Windows acceptance. See windows-validation.md for status.
+
+TGFR EXAM MODE
+DEVELOPMENT JOURNAL AND VERSION REFERENCE
+==========================================================================
+
+Project owner / original author: TGFR (Thiego)
+Journal revision: 1.4
+Prepared: 20 November 2026
+Latest app version documented: 7.0.2
+Latest app file: TGFR_Exam_Mode_GUI_v7_0_2.bat
+Purpose: A reference for continuing development, troubleshooting, testing,
+         release management and restoration compatibility.
+
+CONTENTS
+  1. Scope, evidence and version numbering
+  2. Release index
+  3. Detailed version history
+  4. Incident and corrective-action journal
+  5. Current architecture and restoration reference
+  6. Validation record
+  7. Current capabilities and remaining requirements
+  8. Suggested next development work
+  9. Template for future release entries
+ 10. Evidence register and technical references
+ 11. Inspected release fingerprints
+
+
+1. SCOPE, EVIDENCE AND VERSION NUMBERING
+==========================================================================
+
+This journal reconstructs every identifiable version from the supplied
+scripts, earlier release files, screenshots, diagnostic messages and retained
+development records. It separates what was requested, what the source code
+implements and what was actually tested.
+
+Evidence labels used below:
+  SOURCE-REVIEWED: Behaviour is established by the inspected source.
+  USER-REPORTED:   Observed by the user in a message, screenshot or log.
+  DEV-TESTED:      A retained development test result exists. The environment
+                   and any simulated Windows dependencies are stated.
+  PENDING:         Implementation or acceptance testing remains outstanding.
+  LIMITED RECORD:  The complete original release source was not available
+                   for this journal; the narrower evidence is identified.
+
+Version numbering has three distinct strands:
+  - The original network-disabling BAT is labelled 3.2.
+  - The Python network-reversal utility is labelled 1.0.
+  - The later Exam Mode app has documented releases 3.0, 4.0, 4.1, 5.0, 6.0,
+    6.0.1, 6.1, 6.1.1, 7.0, 7.0.1 and 7.0.2. Python and BAT 3.0 are separate
+    implementations.
+
+The original network BAT 3.2 is therefore not an Exam Mode release after
+Exam Mode 3.0. Similarly, the reverse utility 1.0 does not establish that a
+full Exam Mode 1.0 application existed.
+
+No complete Exam Mode 1.x or 2.x release is established by the available
+record. Intermediate feature requests without a retained version label are
+recorded as requirements, not invented releases.
+
+Dates printed in the two original script headers are reproduced as supplied.
+They are header dates, not independently verified publication dates. The
+reviewed v3/v4/v4.1 source files contain no explicit release date. They were
+available in the development record by 20 November 2026. The v6 family is
+documented in the 20 November 2026 development conversation and release help.
+
+An implemented fix is not automatically a confirmed Windows deployment fix.
+The v7.0 implementation has development test evidence; the subsequent
+user-reported ConfigCI binding error is recorded in J-013 and corrected in
+v7.0.1. The subsequent protected-template access error is recorded in
+J-014 and addressed in v7.0.2. Native Windows acceptance remains unrecorded.
+The follow-up screenshot after
+v6.1.1 delivery identifies a stopped service and existing enforcing rule
+collections. It does not demonstrate successful application blocking. The
+user then explicitly required removal of that backend from the new code.
+
+
+2. RELEASE INDEX
+==========================================================================
+
+Record  Version / branch          Identifying file or supplied material
+------  -----------------------   ------------------------------------------
+R01     Network BAT 3.2           User-pasted network disable script
+R02     Reverse utility 1.0       User-pasted Python reverse script
+R03     Exam Mode 3.0 / Python    TGFR_Exam_Mode_v3.py
+R04     Exam Mode 3.0 / BAT       TGFR_Exam_Mode_v3.bat
+R05     Exam Mode GUI 4.0         TGFR_Exam_Mode_GUI_v4.bat
+R06     Exam Mode GUI 4.1         TGFR_Exam_Mode_GUI_v4_1.bat
+R07     Exam Mode GUI 5.0         TGFR_Exam_Mode_GUI_v5.bat
+R08     Exam Mode GUI 6.0         TGFR_Exam_Mode_GUI_v6.bat
+R09     Exam Mode GUI 6.0.1       TGFR_Exam_Mode_GUI_v6_0_1.bat
+R10     Exam Mode GUI 6.1         TGFR_Exam_Mode_GUI_v6_1.bat
+R11     Exam Mode GUI 6.1.1       TGFR_Exam_Mode_GUI_v6_1_1.bat
+R12     Exam Mode GUI 7.0         TGFR_Exam_Mode_GUI_v7.bat
+R13     Exam Mode GUI 7.0.1       TGFR_Exam_Mode_GUI_v7_0_1.bat
+R14     Exam Mode GUI 7.0.2       TGFR_Exam_Mode_GUI_v7_0_2.bat
+
+Main progression:
+  Registry-only network utilities; reversible per-user exam settings;
+  a selectable GUI; Store and wider Office preferences; Ethernet;
+  AppLocker application rules and Word exam copies; GUI startup correction;
+  callback-state correction and compatible domain-policy handling;
+  service-aware preflight, startup preservation and read-only diagnostics;
+  replacement with device-wide App Control and a separate v7 recovery model;
+  ConfigCI returned-rule collection normalisation and typed-array binding;
+  writable template staging for the ConfigCI input boundary.
+
+The progression summarises development intent. See the individual entries
+for the actual scope and limitations of each implementation.
+
+
+3. DETAILED VERSION HISTORY
+==========================================================================
+
+R01 -- ORIGINAL NETWORK-DISABLING BAT, VERSION 3.2
+Date in supplied header: 17 May 2023
+Evidence: SOURCE-REVIEWED from the pasted code. [S01]
+
+Purpose
+  Attempt to disable Wi-Fi and Windows VPN settings, then restart Windows.
+
+Implementation
+  Uses reg add under HKEY_LOCAL_MACHINE and writes a DWORD named Value=0
+  at seven PolicyManager\default locations:
+    WiFi\AllowAutoConnectToWiFiSenseHotspot
+    WiFi\AllowInternetSharing
+    WiFi\AllowManualWiFiConfiguration
+    WiFi\AllowWiFi
+    WiFi\AllowWiFiDirect
+    WiFi\WLANScanMode
+    Settings\AllowVPN
+  Records command failures in a success variable. If every registry command
+  succeeds, waits 30 seconds and invokes shutdown /r /t 0.
+
+Development findings
+  A successful registry write does not establish that a network adapter or
+  VPN client was blocked. The script performs no live enforcement check.
+  It saves no original values, types or absence information. A later command
+  failure can leave earlier writes applied because there is no rollback.
+  It contains no application blocking, Office proofing control, Ethernet
+  control, exam-mode toggle or graphical interface.
+
+Status
+  Historical predecessor. Its version label belongs to this network utility.
+
+
+R02 -- PYTHON NETWORK-REVERSAL UTILITY, VERSION 1.0
+Date in supplied header: 18 December 2025
+Evidence: SOURCE-REVIEWED from the pasted code. [S02]
+
+Purpose
+  Reverse the preceding network registry changes and restart Windows.
+
+Implementation
+  Uses winreg, ctypes and an administrator check. If necessary, requests
+  elevation through ShellExecuteW with the runas verb.
+  By default writes DWORD Value=1 at the same seven registry paths.
+  Optional REVERT_TO_NOT_CONFIGURED=True deletes each Value instead.
+  On reported success, waits 30 seconds before shutdown /r /t 0; Ctrl+C
+  cancels the wait/restart stage.
+
+Development findings
+  Writing 1 everywhere cannot reconstruct a machine's original values.
+  Deleting values is also not an exact restore without an earlier snapshot.
+  The script labels deletion as Not configured without verifying effective
+  Windows policy. Neither operation checks actual Wi-Fi/VPN availability.
+  The deletion helper ignores an absent value within an existing key, but an
+  absent key reaches the outer OSError handler and is reported as failure.
+  Elevation and restart return values are not fully checked by this code.
+
+Status
+  Historical reversal utility. Its shortcomings motivated recording the
+  original state before applying exam restrictions.
+
+
+R03 -- EXAM MODE 3.0, PYTHON IMPLEMENTATION
+File: TGFR_Exam_Mode_v3.py
+Date: No source release date; documented by 20 November 2026.
+Evidence: SOURCE-REVIEWED. [S03]
+
+Added behaviour
+  Provides on, off and status console commands with ENABLE and RESTORE
+  confirmation prompts. The source describes reversible per-user Windows
+  configuration and a convenience policy.
+  Adds calc.exe, CalculatorApp.exe and EXCEL.EXE to the current user's
+  Explorer DisallowRun list and enables the DisallowRun switch.
+  Writes these Word 16.0 preference values as DWORD zero:
+    CheckSpellingAsYouType
+    CheckGrammarAsYouType
+    CheckGrammarWithSpelling
+  No Wi-Fi, VPN, Ethernet or Microsoft Store control is implemented here.
+
+Backup and restore
+  Path: %LOCALAPPDATA%\TGFR_Exam_Mode\original_registry_values.json
+  Schema version: integer 3.
+  Records prior registry existence, value and type, plus created keys and
+  added rules. Uses exclusive backup creation before writes, checks written
+  values and attempts rollback after an apply failure.
+  Successful restore removes the backup; incomplete restore retains it.
+  There is no automatic restart; the operator is told to sign out/in and
+  test the resulting behaviour.
+
+Limits and review notes
+  Registry status is not a real application launch test.
+  Word preferences do not set the document's NoProofing property.
+  Unlike the BAT v3 implementation, the backup has no user SID validation.
+  The created-key cleanup calls DeleteKey without an explicit values-count
+  check; it should be reviewed before treating cleanup as empty-key-only.
+  The status command returns success even when its displayed match checks
+  are false. These last points are source-review findings, not recorded
+  Windows test failures.
+
+
+R04 -- EXAM MODE 3.0, STANDALONE BAT IMPLEMENTATION
+File: TGFR_Exam_Mode_v3.bat
+Date: No source release date; documented by 20 November 2026.
+Evidence: SOURCE-REVIEWED. [S04]
+
+Change from the Python implementation
+  Packages an embedded Windows PowerShell payload inside a BAT launcher.
+  Python installation is no longer required for this variant.
+  Retains on/off/status, console confirmation, the same three application
+  names and the same three Word preference settings.
+  Still contains no Wi-Fi, VPN, Ethernet or Store controls.
+
+Backup and restore
+  Path: %LOCALAPPDATA%\TGFR_Exam_Mode\original_registry_values_bat.json
+  Schema fields include version=3, format=TGFR-BAT, userSid, createdKeys
+  and changes. This format is distinct from the Python v3 backup.
+  Uses exclusive FileMode.CreateNew and flushes the backup before writes.
+  Validates the version, format and current user's SID before restoring.
+  Restores recorded changes in reverse order. Cleanup explicitly checks
+  that a created key has no values or subkeys before deleting it.
+
+Limits
+  Application controls are still Explorer executable-name restrictions.
+  Registry verification does not prove an app launch is blocked.
+  The status command can print mismatches while returning exit code zero.
+  No document-level or suite-wide Office proofing lock is implemented.
+  Python and BAT v3 state files must not be interchanged.
+
+
+R05 -- EXAM MODE GUI 4.0
+File: TGFR_Exam_Mode_GUI_v4.bat
+Date: No source release date; documented by 20 November 2026.
+Evidence: SOURCE-REVIEWED. [S05]
+
+Added features
+  Introduces a Windows Forms GUI through embedded PowerShell in STA mode.
+  Provides five selectable restrictions: Wi-Fi, Windows VPN settings,
+  Calculator, Excel and automatic Word spelling/grammar.
+  All five options initially appear checked. Actions are Enable Exam Mode,
+  Restore Original State and Refresh Status.
+  Uses a fixed-dialog 610 x 545 window without a maximise button.
+
+Networking
+  Detects physical Wi-Fi adapters by medium/name/description and records
+  enabled adapters before disabling them with Disable-NetAdapter.
+  Tracks adapter description/name; restore enables by description.
+  Selecting Wi-Fi when no enabled wireless adapter is found raises an error.
+  VPN continues the earlier HKLM PolicyManager\default\Settings\AllowVPN
+  Value=0 write. Its source explicitly notes this is not a reliable effective
+  MDM-policy location. Ethernet is not implemented in this release.
+
+Applications and Word
+  Retains per-user DisallowRun for Calculator and Excel.
+  Adds HideSpellingErrors=1 and HideGrammarErrors=1 to the three existing
+  Word preference values. These remain preferences, not document NoProofing.
+
+State and operating model
+  Path: %LOCALAPPDATA%\TGFR_Exam_Mode_GUI\original_state.json
+  Journal version: string 4.0; includes user SID, selections, registry
+  changes and wifiAdapters. Requires elevation under the intended account.
+  Records the baseline before writes, attempts rollback on failure and
+  prevents enabling a second session over an existing snapshot.
+  Restore checks the account SID and retains the backup if errors occur.
+
+Limitations
+  Fixed positioning constrains the display on smaller or scaled desktops.
+  Refresh Status primarily reports saved-session existence.
+  Registry restoration does not check for later external value changes.
+  Wi-Fi restore uses descriptions rather than stable adapter GUIDs.
+  No Store option or comprehensive application launch enforcement is present.
+
+
+R06 -- EXAM MODE GUI 4.1
+File: TGFR_Exam_Mode_GUI_v4_1.bat
+Date: No source release date; documented by 20 November 2026.
+Evidence: SOURCE-REVIEWED. [S06]
+
+Added and changed
+  Adds a Microsoft Store option, using executable-name entries plus HKCU
+  Software\Policies\Microsoft\WindowsStore\RemoveWindowsStore=1.
+  Store names: WinStore.App.exe and Microsoft.WindowsStore.exe.
+  Expands Calculator names to calc.exe, CalculatorApp.exe, Calculator.exe,
+  win32calc.exe and calc1.exe.
+  Extends Office preference writes to PowerPoint and classic Outlook:
+  CheckSpellingAsYouType=0 and CheckGrammarAsYouType=0 in their Office 16.0
+  Options keys. Retains the five Word settings from v4.0.
+  Adds a sixth checkbox and enlarges the fixed window to 700 x 615.
+
+Retained architecture
+  Uses the same per-user GUI backup path, now with journal version 4.1.
+  Keeps the administrator/current-account model, Wi-Fi description tracking,
+  legacy VPN registry write, rollback and the three main buttons.
+  There is still no Ethernet option or AppLocker implementation.
+
+Explicit source limitations
+  The source calls executable-name restrictions best effort and notes that
+  packaged Calculator activation can still succeed.
+  Office preferences cannot force Do not check spelling or grammar for
+  every document or text selection. Some Office builds may ignore values.
+  The source also flags Windows-edition dependence of the Store preference.
+  These warnings are part of the release source; they are not evidence that
+  every supported Office or Windows edition was tested.
+
+
+R07 -- EXAM MODE GUI 5.0
+Identified file: TGFR_Exam_Mode_GUI_v5.bat
+Date: Documented in the 20 November 2026 development conversation.
+Evidence: LIMITED RECORD, USER-REPORTED and later recovery code. [S07]
+
+Confirmed from the supplied interface screenshot
+  Window title identifies TGFR Exam Mode | v5.0.
+  Seven options are visible: Wi-Fi, Ethernet/wired LAN, Windows VPN settings,
+  Windows Calculator, Excel, Microsoft Store and automatic Office proofing.
+  Buttons are Enable Exam Mode, Restore Original State and Refresh Status.
+  Ethernet is now an exposed feature; the preceding v4.1 source lacks it.
+  The interface explicitly warns that its proofing controls do not force the
+  document-level Do not check spelling or grammar checkbox.
+
+User feedback
+  Calculator still opens and spelling checks still work.
+  The window does not fit the available display; lower information/status
+  is clipped. The screenshot establishes this display problem, but does not
+  establish a particular DPI value or the full monitor resolution.
+
+Migration evidence
+  Later v6 recovery code recognises v5-format state and known Calculator
+  Image File Execution Options (IFEO) Debugger entries, alongside saved
+  registry and network changes. This establishes a supported legacy recovery
+  case, not a direct review of the complete original v5 implementation.
+
+Record boundary
+  The v5 filename, interface and reports are retained. The complete original
+  v5 byte copy could not be inspected for this journal. Therefore exact
+  internal implementation details, original size and checksum are left
+  unconfirmed. The current v6.1 source must not be described as v5 source.
+
+
+R08 -- EXAM MODE GUI 6.0
+File: TGFR_Exam_Mode_GUI_v6.bat
+Recorded development date: 20 November 2026
+Evidence: SOURCE-REVIEWED, retained development tests and user report. [S08]
+
+Reason for the release
+  Address Calculator enforcement, the Word proofing requirement, restoration
+  reliability and the clipped interface reported after v5.
+
+Application controls
+  Replaces the main application's executable-name approach with AppLocker
+  planning, application of local rules and effective-policy verification.
+  Calculator and Store use package publisher rules; Calculator also uses
+  discovered modern/classic executable identities and paths.
+  Excel uses detected desktop executable paths and publisher/hash identities.
+  The operator explicitly selects the exam account SID. Applications must
+  be closed before applying the relevant restrictions.
+  Verification checks rule presence, enforcement, Application Identity
+  service status and explicit Denied predictions for the target account.
+
+Word workflow
+  Replaces the broad Office-proofing checkbox with Prepare Word exam copy.
+  Creates a new blank .docx or a separate copy of a supported source .docx.
+  Applies w:noProof to supported text runs, paragraph marks, styles and
+  defaults, then verifies the resulting package.
+  Preserves the source file and retains the exam copy/student work on restore.
+  This is document-level formatting, not a lock across the Office suite.
+
+Network and restoration redesign
+  Records physical Wi-Fi/Ethernet adapter GUIDs and original administrative
+  state. Already-disabled adapters remain disabled on restoration.
+  Changes the VPN option to the selected user's SettingsPageVisibility for
+  the VPN settings page. It does not claim to block VPN traffic or clients.
+  Uses a protected machine-wide v6 session journal saved before mutations.
+  Tracks attempted steps, attempts rollback after apply failure, restores
+  networking before later recovery steps, and keeps incomplete recovery data.
+  Adds recovery of recognised v4/v5 backups, including known legacy
+  Calculator interception values, while validating privileged destinations.
+
+Interface and distribution
+  Keeps the single BAT distribution with embedded Windows PowerShell 5.1.
+  Adds a resizable, DPI-aware, tabbed layout, scrollable content and a docked
+  action/status footer. Tabs cover Restrictions, Word exam document and
+  Diagnostics. Adds Verify, Copy diagnostics, account selection and previous
+  version recovery. Provides help, verify, restore and recover-v5 actions.
+  The release does not schedule an automatic restart.
+
+Defects discovered after delivery
+  A startup position expression raises System.Object[] op_Addition.
+  A nested event callback later loses the UI state reference.
+  The AppLocker preflight rejects any local/effective policy difference,
+  including compatible domain policy. These are addressed in R09/R10.
+
+
+R09 -- EXAM MODE GUI 6.0.1
+File: TGFR_Exam_Mode_GUI_v6_0_1.bat
+Recorded development date: 20 November 2026
+Evidence: SOURCE-REVIEWED diff and DEV-TESTED regression. [S09, S11, S13]
+
+Reported error
+  Method invocation failed because [System.Object[]] does not contain a
+  method named 'op_Addition'.
+
+Root cause and correction
+  The form's Shown handler used arithmetic inside a New-Object Point(...)
+  expression. PowerShell parsed part of the comma-separated expression as
+  an array instead of two scalar coordinates.
+  The fix calculates separate typed integer windowLeft/windowTop values,
+  then constructs [System.Drawing.Point]::new(windowLeft, windowTop).
+  It also groups the Generated diagnostics-header expression correctly.
+
+Validation and compatibility
+  The original error was reproduced, then the updated handler passed ten
+  screen/monitor positioning cases and a diagnostic-header check.
+  The saved v6 state format and application/network/Word engine behaviour
+  remain unchanged by this patch. Earlier v6 backups stay compatible.
+  Native Windows rendering was not executed in the development environment.
+
+Subsequent feedback
+  The user's 6.0.1 log shows operation of the interface and a Wi-Fi disable
+  action, followed by the VerificationLines error and AppLocker policy
+  message documented under R10.
+
+
+R10 -- EXAM MODE GUI 6.1
+File: TGFR_Exam_Mode_GUI_v6_1.bat
+Recorded development date: 20 November 2026
+Evidence: SOURCE-REVIEWED and DEV-TESTED; Windows acceptance PENDING.
+Sources: [S10, S12, S13, S14]
+
+Fix A: VerificationLines callback state
+  The Verify click handler's nested GetNewClosure did not retain the outer
+  callback's UI-state reference. The inner operation could therefore access
+  null even though the original state had a VerificationLines member.
+  The shared operation wrapper now explicitly passes persistent window
+  state and a request-data hashtable to the operation.
+  Verify updates the supplied state and Diagnostics tab. Enable receives
+  account SID, selected options and Word paths explicitly. Restore and
+  legacy recovery follow the same operation signature.
+  Diagnostic failures now include the script stack location.
+
+Fix B: Existing domain AppLocker policies
+  Removes the requirement that local and effective policy be identical.
+  Saves originalLocalXml and originalEffectiveXml separately, plans against
+  effective policy and writes the local changes only.
+  Existing enforced collections receive target-account deny additions only.
+  Domain allow rules are not copied into local policy, and existing effective
+  allowlists do not receive a new allow-all rule.
+  Handles nonempty NotConfigured/omitted-mode collections as enforced.
+  Reports effective AuditOnly with the exact collection state instead of
+  the previous general domain-policy rejection. [M01, M02]
+
+Preservation and verification refinements
+  Creates an allow-other baseline only where the affected collection was
+  genuinely unrestricted. Preserves a pre-existing implicit packaged-app
+  block when EXE enforcement exists without Appx rules.
+  Separately checks for local and effective snapshot changes before apply.
+  Verification compares external rules in each touched collection with
+  their original effective baseline, excluding TGFR-owned rule IDs.
+  This detects missing original allowances, newly arriving allowlists and
+  changed external rules. Unrelated untouched collections may change.
+  A detected change reports that the plan needs restoration/review/refresh
+  and reapplication. Verification does not rewrite domain policy.
+  These are checks at operations/verification, not continuous monitoring.
+
+Restore and diagnostics
+  Restores the recorded local policy without restoring domain policy.
+  Preserves independent changes and retains the current Application Identity
+  service configuration where new effective rules would make reverting it
+  inappropriate; Diagnostics explains this exception to exact restoration.
+  Logs source summaries and collection modes/rule counts.
+  Normalises harmless GUID casing and XML ordering differences for comparison.
+  Corrects XML-node name handling to use LocalName where appropriate.
+  Retains MDM/CSP and service-prerequisite checks.
+
+Compatibility
+  Machine journal schema remains version 6, at the same path.
+  Older v6/v6.0.1 AppLocker plans without originalEffectiveXml fall back to
+  originalLocalXml, matching those versions' local/effective equality check.
+  The 6.0.1 startup correction, resizable interface, network controls, Word
+  exam-copy workflow and legacy recovery remain included.
+
+Recorded validation
+  72 AppLocker assertions with simulated Windows policy/service responses.
+  24 engine backup/apply/rollback/restore assertions.
+  Five UI callback groups and the ten positioning cases plus header check.
+  Final BAT payload syntax, help execution and function visibility checks.
+  See section 6 for exact limits of this evidence.
+
+Subsequent user report
+  The user ran v6.1 and reported the stopped Application Identity safeguard
+  at 12:49:58 and 12:57:24, with diagnostics generated at 12:58:37 on
+  20 November 2026. This stopped the selected application-control operation
+  in preflight. The log does not contain the policy collection modes needed
+  to determine whether the refusal was necessary for that exact machine.
+  The resulting investigation and patch are recorded under R11. [S15]
+
+
+R11 -- EXAM MODE GUI 6.1.1
+File: TGFR_Exam_Mode_GUI_v6_1_1.bat
+Recorded development date: 20 November 2026
+Evidence: SOURCE-REVIEWED and DEV-TESTED; Windows acceptance PENDING.
+Sources: [S15-S17, M09, M10]
+
+Reason for the patch
+  The user reports that v6.1 still cannot enable the selected restrictions:
+  Application Identity is stopped while existing effective AppLocker rules
+  are present. The stack reaches Assert-TgfrAppServiceCanStart.
+  This is an intentional application safeguard, not evidence of a failed
+  Start-Service command or the earlier VerificationLines callback defect.
+
+Fix A: Service preflight distinguishes policy configuration
+  The old guard refused any existing rule while the service was not running.
+  The updated guard examines effective collection type, enforcement mode,
+  rule count and unsupported extensions before deciding whether starting a
+  stopped service could activate existing enforced collections.
+  Known audit-only or empty existing collections no longer fail solely for
+  being present. Requested collections configured AuditOnly still cannot
+  be presented as enforced exam restrictions by the planning/verification
+  logic. Nonempty Enabled/NotConfigured collections remain a reason to
+  refuse automatic activation while the service is stopped.
+  Disabled startup, transitional service states, unknown types/modes and
+  unsupported extensions receive specific diagnostic messages.
+  This does not establish that the user's current policy is safe to activate;
+  its actual exported policy and service state must be reviewed.
+
+Fix B: Diagnostic ordering
+  Local/effective policy summaries and the service status/startup snapshot
+  are logged before the service safeguard can throw. Previously these facts
+  could be returned only after a complete plan had been built, leaving a
+  failed preflight log with little more than the error and stack trace.
+  Apply rechecks startup metadata and service state before the first policy
+  write, alongside the existing independent policy-snapshot checks.
+
+Fix C: Preserve service startup settings for new sessions
+  New AppLocker plans record serviceStartupPolicy=Preserve and do not change
+  AppIDSvc startup type or delayed-start metadata. They may start a stopped,
+  enabled service only after the preflight permits it; starting the service
+  and changing its configured startup type are separate operations.
+  Restore leaves this session's startup baseline intact and preserves any
+  later outside change. The protected service may remain running until a
+  restart; the app does not claim exact restoration of its running state.
+  Microsoft documents that sc.exe cannot reset protected AppIDSvc to Manual.
+  Older journals whose Manual baseline is already present need no startup
+  command. If an older release changed it away from Manual, restoration now
+  reports the limitation and retains recovery data instead of attempting an
+  unsupported start=demand command or overwriting protected Start values.
+  Other supported legacy restoration paths remain separately guarded.
+
+Read-only diagnostic collector
+  Adds diagnostics.ps1 with Invoke-TgfrDiagnosticExport as a separate
+  diagnostic component, distributed as TGFR_Exam_Mode_Diagnostics_v1.bat.
+  It records Windows edition/build, separately labelled
+  operator/interactive accounts, AppIDSvc status/startup, local/effective
+  AppLocker XML and collection counts, named Calculator/Store packages,
+  Excel App Paths and MDM-presence indicators only. Optional CiTool -lp -json
+  captures App Control policy inventory when that tool is available.
+  It writes a unique report directory, continues after section-level errors,
+  and does not change policy, service, registry, network or file permissions.
+  It distinguishes missing evidence from an empty policy and does not infer
+  the owning GPO from a local/effective difference. A stopped service alone
+  is not reported as proof that cached enforcement is absent. [M10]
+
+Compatibility and scope
+  Machine journal schema remains version 6. Historical sessions remain
+  readable; protected-service limitations are reported during recovery.
+  AppLocker remains the app's application-control backend. Alternatives
+  such as App Control for Business were researched and compared, but no
+  WDAC/App Control backend is implemented by this patch. Reverting to v4.1
+  registry restrictions would retain their earlier coverage limitations.
+
+Recorded validation at this journal update
+  95 AppLocker assertions and 24 engine assertions passed using simulated
+  Windows boundaries. Five UI callback scenarios plus startup arithmetic
+  and diagnostic-header regression checks also passed on PowerShell/Linux.
+  20 read-only collector assertions passed, including XML classification,
+  safe parsing, report interpretation and a bounded read-only AST guard.
+  These counts do not establish Windows launch enforcement or successful
+  native collection. The collector's Windows entry point was not executed
+  by those tests. Both final packaged payloads parsed and their help-only
+  actions executed successfully. BAT marker/ASCII/CRLF checks passed. Built
+  release fingerprints appear in section 11.
+
+
+R12 -- EXAM MODE GUI 7.0
+File: TGFR_Exam_Mode_GUI_v7.bat
+Recorded development date: 20 November 2026
+Evidence: SOURCE-REVIEWED and DEV-TESTED; native Windows acceptance PENDING.
+Sources: [S18-S21, M12-M16]
+
+Reason for the architecture change
+  The user's follow-up screenshot shows the more precise v6.1.1 refusal:
+  Application Identity status is Stopped. Existing enforced collections:
+  Appx=Enabled/2 rules; Exe=NotConfigured/4 rules. Starting the service could
+  activate these existing restrictions. The user then explicitly asks that
+  the code stop using the previous application-control backend. This is no
+  longer treated as an audit-only false positive to bypass. [S18]
+
+Implemented backend replacement
+  The new app_control.ps1 uses App Control for Business (WDAC), the Windows
+  ConfigCI compiler and native CiTool. It builds a separate unsigned base
+  policy with a unique owned GUID. It does not import the earlier backend,
+  invoke its commands, inspect its rule collections or configure its service.
+  Existing App Control policy identities are inventoried independently and
+  preserved. The tool updates/removes only its recorded owned policy ID.
+  It has no Managed Installer or reputation-based dependency in this policy.
+
+  Calculator and Store use their Package Family Names. A Windows 11 wildcard
+  package allow baseline preserves other package families within this new
+  policy, alongside narrow selected-package denies. Desktop Excel and
+  discovered classic Calculator executables receive narrow file-identity
+  rules or explicit hash fallback. The policy validator rejects broad
+  publisher denies and missing user/kernel allow baselines. It also checks
+  the intended options, IDs, signing state and compiled fingerprints.
+  This is a standalone deny-policy design; it does not merge broad allows
+  into an existing restrictive organisational base policy. [M13, M14]
+  File-identity validation rejects unexpected executables and recognises the
+  supported calc/win32calc .mui metadata variants. Missing publisher metadata
+  uses explicit hash rules. Inventory absence is checked against the active
+  policy file path before recovery can be considered complete.
+
+Device scope and platform impact
+  Application restrictions now apply to every user, including administrators.
+  The account selector is removed. Operator identity in Diagnostics is not a
+  restriction target. This is an intentional scope change from the v6 family.
+  Application options require Windows 11 22H2/build 22621 or later with native
+  CiTool and ConfigCI. Network/Word selections do not invoke this backend.
+  Applications selected for blocking must be closed across all sessions;
+  the app does not terminate active applications or discard unsaved work.
+
+  The release targets ordinary desktop Excel. A shared MSIX Office package
+  cannot be represented as an Excel-only package denial without affecting
+  Word, so that detected installation receives a specific limitation message.
+  Browser calculators, web Excel and arbitrary third-party tools remain
+  outside the selected application targets.
+
+Journal and restoration
+  Schema changes to integer 7 in a separate protected machine directory:
+    %ProgramData%\TGFR_ExamMode_v7\session.json
+  The plan records its policy ID/name, validated XML, binary fingerprint,
+  selected targets and existing-policy inventory before deployment.
+  Restore brings back recorded adapter states first, restores owned registry
+  changes with conflict checks, then removes only the owned exam policy.
+  Existing organisation/Windows policy IDs are not removed or rewritten.
+  A changed owned policy fingerprint or ownership record stops removal and
+  retains recovery data rather than guessing.
+
+  Windows 11 24H2 and later support unsigned policy removal without a restart;
+  earlier supported releases require a restart to finish removal. The app
+  checks the actual inventory and retains recovery while its policy is still
+  listed. It does not restart Windows automatically. [M15, M16]
+  An active v6 journal must be restored with the matching older release
+  before starting a v7 session. The new code detects older recovery files but
+  does not import their old application backend to perform a migration.
+
+Other changes and retained functions
+  VPN Settings page visibility moves to HKLM for device-wide scope; it still
+  does not block VPN connections, third-party clients or traffic.
+  Wi-Fi/Ethernet identification and recorded-state restoration remain.
+  The Word exam-copy/NoProofing implementation is retained without claiming
+  an Office-wide proofing lock. Student answers are retained after restore.
+  The adaptive interface keeps scrollable tabs and a docked footer. Long
+  Diagnostics text now wraps. Confirmation and help state the all-user scope.
+  The old previous-version recovery button and command are removed from v7.
+
+Additional emergency recovery component
+  TGFR_Exam_Mode_Policy_Recovery_v7.bat is a separate limited helper for cases
+  in which the full interface cannot run under PowerShell language restrictions.
+  It verifies the protected schema7 journal and removes only its recorded
+  owned unsigned policy, using the ownership and fingerprint checks.
+  It does not change language mode or outside policies. The journal remains
+  in place so normal Restore can subsequently recover networking and other
+  recorded settings. Pending removal or inventory/file disagreement retains
+  recovery and produces a precise result. Its fingerprint is in section11.
+  Actual ConstrainedLanguage runspace tests executed on Linux, with Windows
+  boundaries simulated; Windows-enforced policy recovery remains untested.
+  [S21]
+
+Completed development validation
+  66 backend assertions and 39 engine assertions passed using simulated
+  Windows boundaries. Five UI callback scenarios and ten placement cases
+  passed. The removal gate passed for six production modules plus the main
+  BAT payload, parsing them and rejecting former-backend/service references.
+  62 emergency-recovery assertions passed, including actual ConstrainedLanguage
+  execution and the exact packaged bootstrap with Windows boundaries mocked.
+  Complete payload parsing and help execution passed. Final BAT sizes and
+  SHA-256 values were independently checked for this journal. Archive
+  fingerprints are supplied in the distribution manifest; this record does
+  not claim that an archive was already validated when the journal closed.
+  Native Windows enforcement/UI/Office acceptance remains unperformed in
+  this development environment. No test count is a claim of actual
+  Calculator/Store/Excel blocking on the user's device.
+
+
+R13 -- EXAM MODE GUI 7.0.1
+File: TGFR_Exam_Mode_GUI_v7_0_1.bat
+Recorded development date: 20 November 2026
+Evidence: SOURCE-REVIEWED; DEV-TESTED; native acceptance PENDING.
+Sources: [S22-S23, M17-M18]
+Linked incident: J-013
+
+Reported failure and cause
+  The user reports a conversion failure from a generic List of ConfigCI
+  Rule objects to a single Rule for the Merge-CIPolicy Rules parameter.
+  v7.0 captured New-CIPolicyRule output with @(...), then filtered through
+  Where-Object { $_.UserMode -eq $true }. When the output includes a generic
+  list as one pipeline object, PowerShell member enumeration can make that
+  collection pass the filter. The outer List[object].ToArray() then retains
+  a nested list rather than producing a flat Rule[]. Merge-CIPolicy cannot
+  bind the nested list as an individual native Rule. [S22-S23, M17-M18]
+
+Implemented correction
+  app_control.ps1 adds Add-TgfrCiUserModeRules. It recognises native Rule
+  objects first, keeps each with UserMode=true and explicitly traverses
+  supported enumerable containers. It ignores null elements, rejects
+  unexpected objects and bounds recursion. It preserves the native objects;
+  it does not recreate them as strings, JSON or custom property objects.
+  New-TgfrAppPlan checks the count added for EACH selected executable, logs
+  the individual-rule count and passes an explicit native Rule[] to the
+  Merge-CIPolicy parameter. A cast of the old nested list alone would not
+  correct the cause. [S23]
+
+Failure phase and machine effects
+  This conversion happens during plan construction, before the current
+  Enable attempt persists a new session or applies policy/network/settings
+  changes. Temporary compiler files are created and cleaned by the planner.
+  This fact says nothing about an earlier active session and does not mean
+  historical settings have been restored. Existing recovery records remain
+  important and must not be deleted to dismiss an error.
+
+Compatibility and release identity
+  UI title, diagnostic header, help and the main launcher identify 7.0.1.
+  Schema 7, %ProgramData%\TGFR_ExamMode_v7\session.json and the owned policy
+  name family "TGFR Exam Mode 7.0 {GUID}" are intentionally unchanged.
+  Active v7 records remain readable by the patch and by the unchanged
+  TGFR_Exam_Mode_Policy_Recovery_v7.bat companion. All-user application scope,
+  target identities, restoration checks and retained Word copy behaviour
+  remain as documented in R12. The previous application backend and service
+  prerequisite are not reintroduced.
+
+Regression and acceptance
+  Two baseline assertions reproduced the original parameter-binding failure;
+  all 86 new executable-rule regression assertions passed with the fix.
+  The existing 66 backend assertions, seven-input parse/backend-removal gate
+  and packaged help check also passed. Native Windows acceptance is pending.
+  The earlier app-control test fixture planned package-only targets with
+  exePaths empty. It did not exercise this native executable-rule return
+  shape; the new test covers the actual New-TgfrAppPlan executable branch
+  with a strict Rule[] mock parameter. Windows ConfigCI compilation,
+  deployment/removal, application launches and native GUI/Office behaviour
+  have not been executed in this Linux development environment.
+
+User update sequence
+  Close the older interface. Run TGFR_Exam_Mode_GUI_v7_0_1.bat as administrator
+  and confirm 7.0.1 in the title/diagnostics. If a saved v7 session is active,
+  restore it before enabling a new session. Retain the journal. Then retry
+  the required selections, Verify, and actual target-device launch tests.
+
+
+R14 -- EXAM MODE GUI 7.0.2
+File: TGFR_Exam_Mode_GUI_v7_0_2.bat
+Recorded development date: 20 November 2026
+Evidence: SOURCE-REVIEWED and DEV-TESTED; native acceptance PENDING.
+Sources: [S24-S25, M19-M22]
+Linked incident: J-014
+
+Reported failure and diagnosis
+  The user supplies a screenshot reporting access denied to the Windows
+  example template at:
+    C:\windows\schemas\CodeIntegrity\ExamplePolicies\AllowAll.xml
+  The preceding implementation passed that protected source path directly
+  to Merge-CIPolicy. This is consistent with a known input-XML access issue
+  documented in Microsoft WDAC Toolkit issue393. Its reported stack includes
+  FileStream(String,FileMode), which requests read/write access. Microsoft's
+  merged PR407 fixes that related case by copying input XML to a temporary
+  folder and merging from the copy. The user's screenshot does not prove
+  that the exact same DLL implementation or file-open call was involved.
+  The patch therefore corrects the exposed protected-input dependency
+  without asserting that all possible access-denied causes are identical.
+  [S24-S25, M19-M21]
+
+Implemented correction
+  New-TgfrCiTemplateCopy reads bytes from the original with File.ReadAllBytes.
+  It creates a NEW destination through File.Open with CreateNew, ReadWrite
+  and FileShare.None, writes the bytes and disposes the stream. This creates
+  a file with the destination environment's defaults, not the original
+  file's ReadOnly attribute or security descriptor. Existing destination
+  paths are not overwritten. The source is never opened for writing and
+  its content, ownership, permissions and attributes are left unchanged.
+
+  Each application-plan attempt stages AllowAll.work.xml in its unique
+  temporary build directory BEFORE rule generation. Merge-CIPolicy receives
+  only the staged path; package-only plans copy that staged file too.
+  Temporary inputs and outputs remain inside the existing planner cleanup.
+  Microsoft examples also work with a copied AllowAll template. [M22]
+
+  Diagnostics identify preparing the template, merging executable rules
+  and compiling the finished exam policy. Source-read failure and temporary
+  copy-creation failure have distinct error messages and retain the original
+  exception as their cause. If source reading is genuinely blocked, planning
+  still stops; this patch does not grant access or change system-file ACLs.
+
+Failure phase and compatibility
+  The corrected operation belongs to plan construction. It occurs before
+  the current Enable attempt persists a new session or changes deployed
+  policy, adapters or settings. Temporary build files are local planning
+  artifacts. This does not establish whether an earlier session is active
+  or whether historical machine state has already been restored.
+
+  The product title, diagnostics, help and main BAT identify 7.0.2. The
+  schema7 journal, its directory and "TGFR Exam Mode 7.0 {GUID}" ownership
+  family remain unchanged. The companion recovery BAT is byte-identical.
+  The v7.0.1 individual-rule flattening correction remains in the code.
+  No earlier application-blocking backend or service dependency is restored.
+  Application scope, target identities, network/Word functions and owned
+  policy restoration checks remain as documented in R12-R13.
+
+Validation and acceptance
+  Four baseline assertions reproduced the protected-input failure at the
+  simulated ConfigCI boundary; all 25 new template-access assertions passed.
+  The 86 rule-binding and 66 application-control assertions were rerun and
+  passed. The seven-input parse/removal gate and packaged help also passed.
+  Native Windows compiler/enforcement acceptance remains pending.
+  The template fixture models a native tool refusing read/write access to a
+  protected original while accepting the staged copy. This is a regression
+  model, not execution of the Windows ConfigCI compiler or its exact DLL.
+  Native Windows deployment/removal and launch acceptance remain outstanding.
+
+User update sequence
+  Close the earlier interface. Run TGFR_Exam_Mode_GUI_v7_0_2.bat as
+  administrator, confirm 7.0.2 in the title, and restore an active saved v7
+  session before starting a fresh one. Keep the journal and unchanged
+  recovery companion. Retry the required options and inspect Diagnostics.
+  If the error instead names failure to read the source or create the copy,
+  preserve the full new message for review rather than modifying Windows
+  template ownership or permissions.
+
+
+4. INCIDENT AND CORRECTIVE-ACTION JOURNAL
+==========================================================================
+
+The IDs below are assigned by this reference journal for future tracking.
+
+J-001 -- Original state could not be reconstructed
+  Affected: Original network disable and reverse utilities.
+  Finding: Setting all values to 0, then 1 or deleting them, loses the actual
+           prior state and cannot provide an exact restoration.
+  Response: Per-value snapshots in v3 onward; protected, transactional
+            machine-state handling in the v6 family.
+  Status: Implemented for tracked settings. No release can recreate an
+          unrecorded historical baseline. [S01-S06, S08-S10]
+
+J-002 -- Calculator remains available
+  Report: User says Calculator is not blocked; requests all Windows modes.
+  Relevant design: Older DisallowRun/name restrictions are insufficient
+                   evidence of packaged-app launch enforcement.
+  Response: AppLocker package plus discovered executable rules in v6.0;
+            domain-compatible planning and verification in v6.1.
+  Status: Implementation and simulated tests complete; actual launch
+          acceptance under the intended exam account remains pending.
+          Arbitrary third-party/browser calculators are outside coverage.
+  Sources: [S06-S08, S10, S12-S14]
+
+J-003 -- Spell check still operates
+  Report: User requires Do not check spelling or grammar to be selected.
+  Finding: Earlier preference writes do not apply that document property.
+  Response: v6 prepares and verifies a separate Word .docx with NoProofing.
+  Status: Implemented for the prepared Word copy. A universal Microsoft 365
+          proofing restriction remains an unmet broader requirement.
+  Sources: [S03-S08, S10, M05, M06]
+
+J-004 -- Interface information clipped below the screen
+  Report: v5 screenshot shows lower information/status cut off.
+  Response: v6 uses resizable tabs, scrolling, monitor-aware sizing and a
+            separate action/status footer; v6.0.1 fixes startup positioning.
+  Status: Code and arithmetic tests complete; native multi-DPI visual
+          acceptance remains pending. [S07-S11, S13]
+
+J-005 -- System.Object[] / op_Addition startup error
+  Affected release: 6.0.
+  Cause: Array parsing in the window-position expression.
+  Resolution: Typed scalar coordinates and Point::new in 6.0.1.
+  Status: Reproduced and regression-tested. [S09, S11, S13]
+
+J-006 -- VerificationLines property error
+  Affected report: 6.0.1; callback pattern originated in v6.0.
+  Exact report:
+    The property 'VerificationLines' cannot be found on this object.
+    Verify that the property exists and can be set.
+  Cause: Nested callback loses the persistent UI-state reference.
+  Resolution: Explicit state/request parameters in v6.1.
+  Status: Reproduced and tested through actual callback code with simulated
+          controls; target-machine acceptance pending. [S10, S12-S14]
+
+J-007 -- Compatible domain policies rejected
+  Exact screenshot message:
+    Domain AppLocker rules or enforcement settings differ from the local
+    policy. Use the owning Group Policy to apply exam restrictions;
+    local policy was not changed.
+  Cause: Equality comparison between local and effective policies.
+  Resolution: Separate snapshots, compatible local deny additions, precise
+              enforcement checks and domain-preserving restore in v6.1.
+  Status: Simulated tests passed. AuditOnly/MDM/service constraints still
+          require an appropriate policy or environment resolution.
+  Sources: [S08-S10, S12-S14, M01-M04]
+
+J-008 -- Target denial could hide a changed policy baseline
+  Found: During internal v6.1 review, before final packaging.
+  Reproduction: Remove original domain allowances while retaining TGFR
+                denies; target-only verification previously passed even
+                though unrelated apps could become implicitly denied.
+  Related case: A new allowlist arrives after an unrestricted collection
+                received TGFR's allow-other baseline.
+  Resolution: Verify the external rule baseline in touched collections.
+  Status: Nine additional regression assertions passed; included in the
+          delivered v6.1 total of 72. Not a separate app release. [S13, S14]
+
+J-009 -- Stopped-service guard rejected every nonempty policy
+  Report: The v6.1 error describes AppIDSvc as stopped with existing rules.
+          Its original guard proves only a non-Running state, not the exact
+          state, which was omitted from that log.
+  Finding: The guard counted all rules without distinguishing AuditOnly
+           from effective enforcement. The report lacks the collection
+           facts required to classify the user's exact case.
+  Resolution: v6.1.1 classifies the effective collections and service startup
+              state. Existing enforced collections still require review
+              before activating a stopped service.
+  Status: Source correction and simulated tests complete; whether the user's
+          device falls within the newly permitted case remains unverified.
+  Sources: [S15, S16]
+
+J-010 -- Failed preflight omitted useful policy/service facts
+  Finding: Summaries were returned only after successful plan construction,
+           so the guard could throw before they reached the interface log.
+  Resolution: v6.1.1 logs local/effective collection summaries and the service
+              snapshot before evaluating the guard. A separate read-only
+              collector provides report files for further diagnosis.
+  Status: Logging order and collector logic tested; native data collection
+          remains pending. [S15-S17]
+
+J-011 -- Protected Manual startup could not be restored as promised
+  Found: Source/documentation review while investigating the v6.1 report.
+  Finding: Earlier code changed AppIDSvc startup to Automatic and attempted
+           sc.exe start=demand to restore a Manual baseline. Microsoft
+           documents that this reset to Manual is unsupported by sc.exe.
+  Resolution: v6.1.1 preserves startup configuration for new sessions.
+              Legacy Manual-baseline conflicts are reported with recovery
+              data retained rather than an unsupported restoration attempt.
+  Status: Implemented and mock-tested. This is a source-level restoration
+          defect; the user did not report an actual restore failure here.
+  Sources: [S10, S16, M09]
+
+J-012 -- Existing enforced rules confirmed; backend replacement required
+  Report: After v6.1.1 delivery, the user supplies a screenshot with status
+          Stopped, Appx=Enabled/2 rules and Exe=NotConfigured/4 rules, then
+          explicitly says not to use the previous backend in the code.
+  Finding: This is a known enforced-collection activation gate, not the
+           earlier undifferentiated audit-only error or UI callback fault.
+           The screenshot does not identify the owning GPO or rule actions.
+  Decision: v7.0 replaces the application backend with device-wide App
+            Control; it does not automatically activate or modify the old
+            policy/service. It retains independent external policy ownership.
+  Impact: All-user scope, new policy deployment/removal lifecycle, separate
+          schema7 journal and Windows11 22H2+ application-control prerequisite.
+  Status: Source, simulated regression, constrained-runspace recovery and
+          final payload checks passed; native Windows acceptance remains open.
+  Sources: [S18-S21, M12-M16]
+
+J-013 -- ConfigCI generic rule list cannot bind to Rules
+  Report: After v7 delivery the user reports:
+    ERROR: Cannot convert 'System.Collections.Generic.List`1[Microsoft.SecureBoot.UserConfig.Rule]'
+    to the type 'Microsoft.SecureBoot.UserConfig.Rule' required by parameter
+    'Rules'. Specified method is not supported.
+  Finding: The executable planner may retain an emitted generic rule list
+           as a single element. UserMode member enumeration filters that
+           list without turning it into individual native Rule objects.
+           Merge-CIPolicy expects Rule[]; converting only the outer list
+           to an object array does not flatten the nested collection.
+  Resolution: v7.0.1 explicitly walks returned collections, filters actual
+              native user-mode rules, requires per-executable output and
+              binds a flat native Rule[] at the merge boundary.
+  Test gap: Prior planner fixtures had no executable paths. New fixtures
+            exercise that branch and the typed cmdlet-parameter boundary.
+  Impact: Planning fails before selected changes in this Enable attempt;
+          this is not evidence about any earlier session's restoration.
+  Status: Fixed in source and development-tested. Two baseline assertions
+          reproduced the original error; 86 new regression assertions,
+          66 existing backend assertions, the seven-input parse/removal gate
+          and packaged help check passed. Native acceptance remains pending.
+  Sources: [S22-S23, M17-M18]
+
+J-014 -- Protected AllowAll.xml input access denied
+  Report: User screenshot reports access denied to
+          C:\windows\schemas\CodeIntegrity\ExamplePolicies\AllowAll.xml.
+  Finding: v7.0.1 passes the Windows source path directly to Merge-CIPolicy.
+           A related Microsoft issue documents protected-input failure and
+           a merged fix that stages input XML in temporary storage first.
+           The screenshot alone does not identify the exact DLL/internal
+           access mode on this machine; source read denial is also possible.
+  Resolution: v7.0.2 reads the source, creates a new writable work copy and
+              supplies only that copy to ConfigCI. Source bytes/ACLs/owner/
+              attributes are not modified. The helper distinguishes source
+              read failure from destination creation failure. Logs identify
+              staging, rule merge and compilation.
+  Compatibility: Retains v7.0.1 flat native Rule[] handling, schema7,
+                 ownership family7.0 and the unchanged recovery companion.
+  Status: Fixed in source and development-tested. Four baseline assertions
+          reproduced the simulated protected-input failure; 25 new template,
+          86 rule-binding and 66 backend assertions passed. The seven-input
+          parse/removal gate and packaged help also passed. Native Windows
+          compiler/enforcement acceptance remains pending.
+  Sources: [S24-S25, M19-M22]
+
+RETAINED FIELD-TEST EXTRACT -- USER'S 6.0.1 REPORT
+  Generated: 2026-11-20 12:28:15 (as reported)
+  Exam account: EXAMPLE\exam-admin (signed in)
+  12:25:44  Checking AppLocker prerequisites and existing policies.
+  12:26:03  Checking AppLocker prerequisites and existing policies.
+  12:26:44  Disabling Wi-Fi.
+  12:26:45  VPN Settings page visibility value matches.
+            VPN connections and clients are not blocked by this option.
+  12:26:45  Wifi / Wi-Fi: administratively disabled.
+  12:27:28  Checking AppLocker prerequisites and existing policies.
+  12:27:50  Checking AppLocker prerequisites and existing policies.
+  ERROR: The property 'VerificationLines' cannot be found on this object.
+         Verify that the property exists and can be set.
+
+Interpretation: This records a Wi-Fi disable and a matching VPN-page setting
+in that test session. It does not demonstrate successful AppLocker blocking,
+Office-wide proofing removal, or completed restoration. [S12]
+
+RETAINED FIELD-TEST SUMMARY -- USER'S 6.1 REPORT
+  Generated: 2026-11-20 12:58:37 (as reported)
+  Exam account: EXAMPLE\exam-admin (signed in)
+  Preflight attempts: 12:49:58 and 12:57:24.
+  Stack entry: Assert-TgfrAppServiceCanStart; then New-TgfrAppPlan and the
+               enable-operation/UI callbacks in the embedded script.
+  ERROR: Application Identity is stopped while existing effective AppLocker
+         rules are present. Starting it could activate unrelated
+         restrictions; review and enable the existing policy first.
+  Interpretation: The application-control operation stopped before applying
+  its plan. The stack's <No file> label reflects embedded script execution;
+  it is not evidence that the BAT or an external PS1 file was missing.
+  The report does not identify collection modes, owning GPO, or successful
+  Calculator/Store/Excel blocking. [S15, S16]
+
+
+RETAINED FIELD-TEST SUMMARY -- FOLLOW-UP AFTER V6.1.1 DELIVERY
+  Attachment: image(20261120-132046).png.
+  Dialog title: Exam Mode needs attention.
+  Message facts: Application Identity status is Stopped.
+                 Appx=Enabled/2 rules; Exe=NotConfigured/4 rules.
+  The dialog says starting the service could activate the existing
+  restrictions and that no changes were made by that attempt.
+  User instruction: debug the app and do not use the previous backend.
+  Interpretation: The precise guard now identifies actual collection modes;
+  the user selects an architecture change. Counts are rule counts, not counts
+  of blocked applications. The screenshot does not identify the owning GPO,
+  rule actions or any completed launch/restore test. [S18]
+
+
+5. CURRENT ARCHITECTURE AND RESTORATION REFERENCE
+==========================================================================
+
+Current v7 architecture
+  Distribution: self-contained TGFR_Exam_Mode_GUI_v7.bat, embedded Windows
+                PowerShell 5.1 payload, native path and STA GUI invocation.
+  word_exam.ps1: supported .docx inspection/copying and NoProofing formatting.
+  app_control.ps1: separate App Control policy compiler, ownership checks,
+                   direct CiTool deployment, verification and removal.
+  engine.ps1: protected schema7 journal, HKLM settings, physical adapters,
+              apply/rollback and recovery; no selected-account API.
+  ui.ps1: adaptive layout, explicit callback state and device-wide scope.
+  main.ps1: help, platform checks and ui/verify/restore command routing.
+  recovery_command.ps1: separate owned-policy recovery component, packaged
+                        as TGFR_Exam_Mode_Policy_Recovery_v7.bat. Its 62 tests
+                        include a constrained runspace with Windows mocked.
+
+Current v7 machine journal
+  Active file: %ProgramData%\TGFR_ExamMode_v7\session.json
+  Schema: integer 7. Scope: Device. No per-user target SID.
+  Main fields: version, sessionId, machineId, createdUtc, scope, options,
+               phase, appPlan, appAttempted, registryChanges, adapters, word.
+  App plan includes policy identity, generated XML/binary fingerprint,
+  selected application identities and an existing-policy inventory snapshot.
+  Administrators/SYSTEM protection, atomic writes and mutation locking remain.
+  Journal files receive explicit Administrators/SYSTEM access rules and a
+  trusted owner before commit, matching emergency-recovery trust requirements.
+  Policy installation is attempted only after the recovery record is saved.
+  Failed/pending restore retains that record. Complete restore archives it.
+  Restore affects owned tracked settings; it is not a whole-machine backup.
+
+Current v7 recovery boundaries
+  - Restore adapter GUIDs to the original administrative states first.
+  - Restore HKLM VPN-page values only if they still match this session or
+    are already at the saved baseline; preserve outside changes.
+  - Remove only the validated owned policy ID. Preserve unrelated IDs.
+  - Retain recovery if runtime policy removal is pending Windows restart.
+  - Keep Word copies and student answers.
+  - Do not import or reinterpret a v6 active journal as a v7 plan. Recover
+    earlier sessions using their matching release before enabling version7.
+  - Do not claim runtime launches were tested from policy inventory alone.
+
+Current command reference
+  TGFR_Exam_Mode_GUI_v7.bat
+  TGFR_Exam_Mode_GUI_v7.bat help
+  TGFR_Exam_Mode_GUI_v7.bat verify
+  TGFR_Exam_Mode_GUI_v7.bat restore
+
+Historical v6 architecture and recovery reference (retained)
+  The following architecture describes the v6 family. Its module, account
+  scope, journal and recovery command are not part of the v7 runtime.
+
+Distribution and modules
+  Delivery: One .bat file, with an embedded Windows PowerShell payload.
+  Launcher: Built-in Windows PowerShell 5.1, native 64-bit path where needed,
+            STA mode for the interface, and dot-sourced payload execution.
+  word_exam.ps1: Supported .docx package inspection, copy creation, NoProofing.
+  applocker.ps1: Policy preflight/planning, apply, verification and restoration.
+  engine.ps1:   Accounts, state files, registry, networking, rollback/recovery.
+  ui.ps1:       Windows Forms layout, operations, state and diagnostics.
+  main.ps1:     Help, platform checks and command routing.
+  These module names identify sections of the packaged BAT and development
+  source; separate PS1 files are not required to run the BAT.
+  diagnostics.ps1 is a separate read-only collector component with its own
+  Invoke-TgfrDiagnosticExport entry point and report-file output.
+
+Important implementation decisions
+  - Keep the embedded payload dot-sourced so callback closures can resolve
+    engine functions in the process's command scope.
+  - Pass UI state and request data explicitly across nested operations.
+  - Snapshot local and effective AppLocker policy independently.
+  - Preserve pre-existing allowlists; do not copy central rules locally.
+  - Record the original state before attempting machine mutations.
+  - Restore tracked settings; preserve external conflicts and student work.
+  - Distinguish an application-policy prediction from a real launch result.
+  - From v6.1.1, preserve AppIDSvc startup configuration in new sessions and
+    record policy/service facts before a preflight refusal.
+
+v6 machine journal
+  Active file: %ProgramData%\TGFR_ExamMode_v6\session.json
+  Schema version: integer 6, including in app releases 6.0.1, 6.1 and 6.1.1.
+  Main fields: sessionId, machineId, createdUtc, targetSid, options, phase,
+               appPlan, appAttempted, registryChanges, adapters and word.
+  Recorded phases: Prepared, Applying, Active, Restoring, Recovery required,
+                   and Restored (archived).
+  The directory is restricted to Administrators and SYSTEM. State writes use
+  temporary files and atomic replacement. A machine mutation lock serialises
+  apply/restore operations. Existing active snapshots cannot be overwritten.
+  A successful restoration archives the journal; an incomplete restoration
+  retains the active recovery information.
+
+What restoration means
+  It restores the state that this session recorded for the settings it
+  touched. It is not an image backup or Windows System Restore point.
+  Registry comparisons include value type and existence, not just data.
+  Adapters are matched by GUID and restored to the recorded enabled/disabled
+  state. The selected account's registry hive must be available when needed.
+  Application restoration changes local policy only. Conflicting edits to
+  touched local policy are preserved and reported for reconciliation.
+  New v6.1.1 sessions preserve AppIDSvc startup configuration. The protected
+  service may remain running until Windows restarts. Older sessions receive
+  guarded recovery; a Manual baseline changed by an older release may need
+  owning-policy reconciliation because sc.exe cannot reset it to Manual.
+  Outside startup changes and policy requirements are preserved and reported.
+  Word exam copies and candidate answers are retained.
+
+Compatibility map
+  Python v3: its own JSON format and original_registry_values.json file.
+  BAT v3:    TGFR-BAT format and original_registry_values_bat.json file.
+  GUI v4/4.1/v5: recognised legacy original_state.json formats, recoverable
+                through the v6 previous-version recovery path where valid.
+  v6/6.0.1/6.1/6.1.1: shared machine schema version 6; new sessions include
+                      the serviceStartupPolicy=Preserve marker.
+  The v6 recover-v5 action does not implement migration of the two v3
+  formats. The original v3 tool/format must be handled separately.
+  Restore an active v6 session before running legacy recovery. Keep backups
+  until restoration completes; absent backups cannot establish prior values.
+
+Historical v6.1.1 command reference
+  TGFR_Exam_Mode_GUI_v6_1_1.bat
+  TGFR_Exam_Mode_GUI_v6_1_1.bat help
+  TGFR_Exam_Mode_GUI_v6_1_1.bat verify
+  TGFR_Exam_Mode_GUI_v6_1_1.bat restore
+  TGFR_Exam_Mode_GUI_v6_1_1.bat recover-v5
+
+Diagnostics versus this journal
+  This TXT file is the development/version history. The app's session.json
+  is recovery state. The Diagnostics tab is an operation log held for the
+  running interface and copied with Copy diagnostics. They serve different
+  purposes; a durable automatic rolling TXT runtime log is not implemented
+  by the current in-memory logging helper. The new read-only collector can
+  export a separate diagnostic snapshot to Report.txt plus policy XML/JSON;
+  this snapshot is not a recovery backup or an automatic rolling log.
+
+
+6. VALIDATION RECORD
+==========================================================================
+
+This section records previously completed development tests. Creating this
+journal did not rerun the app or apply restrictions to a Windows computer.
+
+Latest recorded development environment
+  PowerShell 7.4.22 on Linux for parser/logic testing.
+  Production code targets built-in Windows PowerShell 5.1/.NET Framework.
+  Windows policy, services, registry, network adapters and UI controls were
+  simulated where the platform was unavailable. Word ZIP/XML file tests
+  operated on actual files but did not run Microsoft Word.
+
+Version 7.0.2 patch validation
+  Four baseline assertions reproduced the protected-input failure at the
+  simulated ConfigCI boundary. All 25 new template-access assertions passed:
+  exact source bytes/BOM/CRLF and original ReadOnly attribute are preserved;
+  the fresh copy is writable and its exclusive stream closes correctly;
+  executable and package-only plans use staged input; failures clean up;
+  an actually locked source produces the distinct read error before ConfigCI;
+  an existing destination is not overwritten. The 86 rule-binding assertions
+  and 66 application-control assertions were rerun and passed. The seven-input
+  production/payload parse and removed-backend gate passed, and the packaged
+  help action displayed 7.0.2. Recovery bytes remain identical to v7.0.
+  Prior engine, recovery and UI suite totals remain historical; these groups
+  were not rerun for this narrow patch.
+  Native Windows compilation, policy deployment/removal and actual launches
+  remain outside this Linux validation environment.
+
+Version 7.0.1 patch validation (historical release evidence)
+  Two baseline assertions reproduced the original nested-list binding error.
+  All 86 new executable-rule regression assertions passed, covering scalar,
+  pipeline, typed-array, generic-list and nested-list output in the hash and
+  file-publisher paths; native object identity, order and user-mode filtering;
+  invalid/empty/kernel-only output; recursion bounds; and per-file completeness.
+  The existing 66 application-control assertions were rerun and passed.
+  The seven-input production/payload parse and removed-backend gate passed,
+  and the packaged help action displayed version 7.0.1. The recovery BAT is
+  byte-identical to v7.0. Prior engine, recovery and UI suite results below
+  remain historical; this narrow patch does not claim they were rerun.
+  The native ConfigCI compiler, CiTool operations and actual Windows launch
+  enforcement are not available in this environment. Simulated typed-Rule
+  parameter binding verifies this collection-handling correction only.
+
+Version 7.0 completed development checks (historical release evidence)
+  Engine: 39 assertions passed, using simulated Windows boundaries.
+  Backend: 66 assertions passed, including policy structure/ownership,
+           target identity and recovery checks with Windows tools simulated.
+  Recovery: 62 assertions passed; actual ConstrainedLanguage runspaces and
+            the exact packaged bootstrap were exercised on Linux, with
+            Windows commands, paths and security responses simulated.
+  UI: five callback scenarios passed, including all-user confirmation,
+      retained explicit operation state, repeated Verify and failure recovery.
+  Layout: ten working-area/monitor arithmetic cases passed; also reproduced
+          the old op_Addition defect and checked the diagnostic header.
+  Backend-removal gate: seven inputs passed: six production modules and the
+          main embedded BAT payload. Sources parse and contain no former-
+          backend/service references or operations; the gate executes none.
+  Final payloads: complete parsing and help execution passed. Main and
+          recovery BAT sizes/SHA-256 values were checked against release
+          results. Distribution archive fingerprints are in its manifest;
+          archive validation is outside this completed journal check.
+  Native Windows policy deployment/removal, actual application enforcement,
+  recovery under Windows-enforced language restrictions, WinForms rendering
+  and Office behavior remain acceptance work on representative devices.
+
+Historical test groups (retained)
+  AppLocker -- 72 assertions passed for final v6.1; 95 passed for the
+    updated v6.1.1 module using simulated Windows responses.
+    Coverage: correct target identities, existing allowlists, enforcement
+    modes, service prerequisites, effective rules, compatible domain policy,
+    restore conflicts, independent source changes and external-rule drift.
+    v6.1.1 adds service-mode classification, diagnostic ordering, startup
+    preservation, state changes before apply and legacy Manual recovery.
+
+  Read-only collector -- 20 assertions passed for the new diagnostic module.
+    Covers XML/action counts, enforcement-mode interpretation, missing
+    evidence, malformed/DTD input, import-time inactivity and read-only
+    command/method guards. No native export entry point was executed.
+
+  Engine -- 24 assertions passed for v6.1 and were rerun for v6.1.1.
+    Coverage: baseline preservation, duplicate enable refusal, adapter state,
+    partial failure rollback, recovery retry, external registry conflicts,
+    archive behaviour and preservation of prepared exam documents.
+
+  UI callbacks -- five scenarios passed for v6.1 and were rerun for v6.1.1.
+    Executes extracted production callbacks after construction scope ends.
+    Covers repeated Verify, backend errors, successful retry, exact Enable
+    inputs, Restore and legacy recovery, and release of the busy state.
+
+  Startup/layout arithmetic -- ten screen/monitor cases passed.
+    Includes small work areas, off-primary monitor origins and oversized
+    windows. Also reproduces the old op_Addition error and checks complete
+    diagnostic-header lines. Introduced for v6.0.1 and rerun for v6.1 and
+    v6.1.1.
+
+  Legacy recovery -- six groups previously passed in v6 development.
+    Covers older adapters without GUIDs, known Calculator interception,
+    untrusted/unknown destinations, multiple backups and external conflicts.
+
+  Word package handling -- seven regression groups plus six additional
+    fixture cases previously passed in v6 development.
+    Covers blank/copy output, source preservation, NoProofing coverage,
+    supported namespaces and rejection of unsupported or malformed inputs.
+
+  Final packaging -- passed for v6.1; rerun for v6.1.1 and collector v1.
+    Both final payloads parse and their help-only actions execute. BAT
+    marker/ASCII/CRLF checks passed. The prior v6.1 checks also verified
+    expected function visibility in launcher scope. Packaging checks do not
+    execute Windows policy, service, registry, network, GUI or Word actions.
+
+Counts above use different units (assertions, groups and scenarios). They
+should be retained with their labels rather than combined into one total.
+
+Outstanding native acceptance
+  Windows PowerShell 5.1 execution; actual Calculator/Store/Excel launches;
+  representative domain-policy application and refresh; physical adapter
+  disable/restore; Word's displayed language setting and F7 behaviour;
+  scaled/small/multiple-monitor UI rendering; and interrupted-session
+  recovery on the intended Windows configuration.
+
+
+7. CURRENT CAPABILITIES AND REMAINING REQUIREMENTS
+==========================================================================
+
+Current v7 capability summary
+  Calculator/Store: selected exact package families and discovered classic
+    Calculator file identities, enforced device-wide by an owned policy.
+  Desktop Excel: discovered ordinary desktop executable identity; a shared
+    MSIX Office package is explicitly refused for an Excel-only package deny.
+  Scope: all accounts, including administrators. All-user scope is displayed
+    in the interface; operator identity is not a policy target.
+  Platform: Windows11 22H2/build22621+ for application options. Native tools
+    must be present. Existing external policies remain independently active.
+  Verification: owned policy identity/fingerprint/inventory plus tracked
+    settings. This is not continuous monitoring or a real launch test.
+  Restoration: schema7 journal, owned GUID only, conflict checks and pending-
+    restart recovery. An old active v6 journal is not migrated or overwritten.
+  Network: recorded physical Wi-Fi/Ethernet adapter state; no continuous
+    blocking of newly attached or alternate network routes.
+  VPN: device-wide HKLM Settings-page visibility only; no traffic/client block.
+  Word: same prepared-document NoProofing workflow and proofing limitations.
+  UI: scrolling tabs, fixed all-user scope, docked footer, wrapped Diagnostics.
+  Remaining acceptance: actual Windows/Office behavior, policy removal across
+    build/update levels, small/high-DPI rendering and emergency recovery.
+
+Retained v6.1.1 capability snapshot
+  The following describes the prior release for comparison; its account-
+  targeting and service prerequisites do not describe the v7 runtime.
+
+Windows Calculator
+  Current: Package publisher rules and discovered classic/modern executable
+           rules for the selected account.
+  Boundary: Browser calculators and arbitrary third-party calculators are
+            not covered by this rule set. Native launch acceptance pending.
+
+Microsoft Store and desktop Excel
+  Current: Selected-account AppLocker rules with effective-policy checks.
+  Boundary: Requires compatible policy/service conditions. Existing running
+            applications must be closed; a launch rule is not a close action.
+  v6.1.1 impact: More precise service preflight and preserved startup state.
+                Existing enforcing policies can still require intervention
+                through their owning management policy before activation.
+
+Wi-Fi and Ethernet
+  Current: Disable detected physical adapters and restore recorded state.
+  Boundary: New/hot-plugged adapters, mobile data and other routes are not
+            continuously blocked or monitored.
+
+VPN
+  Current: Restricts visibility of the Windows VPN settings page.
+  Remaining requirement: Full prevention of VPN clients/connections/traffic
+                         has not been implemented by that option.
+
+Spelling and grammar
+  Current: Prepare a Word .docx copy using the actual NoProofing property.
+  Remaining requirement: A universal Office/Microsoft 365 proofing lock.
+  Boundary: Other documents, Office web, PowerPoint, Outlook, add-ins and
+            AutoCorrect are not disabled by the Word-copy setting. Pasting
+            formatting or editing language settings can change proofing.
+
+Exam mode and original-state restoration
+  Current: Selectable restrictions, saved baseline, apply/verify/restore,
+           retained recovery state and compatible v6 journals.
+  Boundary: Restore covers tracked settings and preserves conflicts. A
+            local administrator can change policies; the app is not a
+            tamper-resistant kiosk or a whole-device recovery system.
+
+Interface
+  Current: Resizable tabs, scrolling, account selection, persistent footer,
+           explicit callback state, diagnostics and copied error details.
+  Remaining validation: Native Windows rendering across actual DPI setups.
+
+
+8. SUGGESTED NEXT DEVELOPMENT WORK -- NOT YET RELEASED
+==========================================================================
+
+The following are proposals, not completed features or promised versions.
+
+Priority 1 -- Close the native acceptance gap
+  Record tests on a representative school-managed Windows device and the
+  actual student/exam account. Preserve Windows build, Office build, DPI,
+  policy identities/enforcement state, test results and restore outcomes
+  with each run. For v7 include the exact unsigned-policy removal/restart
+  behavior and emergency-recovery outcome.
+
+Priority 2 -- Decide the intended breadth of exam restrictions
+  Define whether the product should cover all Office proofing, arbitrary
+  calculator software, browser tools and VPN traffic. These broader goals
+  need separate implementation and validation from the current controls.
+
+Priority 3 -- Durable support logs
+  The read-only snapshot collector is implemented. A dedicated interface
+  export action and timestamped automatic rolling operation logs remain
+  separate possible improvements. Keep reports separate from recovery
+  snapshots and include version, session, operation and error location.
+
+Prior alternative-backend proposal -- now implemented in v7 source
+  The following paragraph records the proposal as of v6.1.1. R12 documents
+  its subsequent implementation and the remaining native acceptance work.
+  App Control for Business/WDAC is a possible supported architecture for
+  dedicated exam devices, with device-wide scope, packaged-app baseline
+  design, audit testing and policy-removal planning. It is not implemented
+  in v6.1.1. Store-only policy or v4.1 DisallowRun settings cannot be described
+  as a complete equivalent for reliably blocking all three selected apps.
+
+Priority 4 -- Release and recovery maintenance
+  Keep immutable copies and hashes of each release, including original v5
+  if recovered. Maintain source-controlled modules, a repeatable BAT build
+  and regression cases for every confirmed incident. Add explicit migration
+  tests whenever the saved-state format changes.
+
+Priority 5 -- Interface acceptance
+  Check text wrapping, scrolling, keyboard navigation, button accessibility
+  and visible status at representative resolutions and scaling settings.
+  Keep status wording tied to what was actually verified.
+
+
+9. TEMPLATE FOR FUTURE RELEASE ENTRIES
+==========================================================================
+
+App version:
+Release date/time and timezone:
+Release filename:
+File size and SHA-256:
+Source revision/commit, if available:
+Saved-state schema version:
+Supported upgrade/restore paths:
+
+Reason for change / linked journal issue IDs:
+Requested behaviour:
+Implemented behaviour:
+Files/modules changed:
+Registry/policy/adapter/document effects:
+User-interface changes:
+Restoration and migration changes:
+
+Tests executed:
+Test environment and Windows/Office versions:
+Simulated dependencies:
+Actual user-account launch/document/network results:
+Result and retained evidence:
+Known limitations or unresolved defects:
+Release/acceptance decision:
+Follow-up actions and owner:
+
+For a new incident, record:
+  Date/time; app version; selected account; selected options; reproduction
+  steps; expected result; actual result; full error; Diagnostics output;
+  whether a saved session exists; recovery result; root cause; fix version;
+  regression evidence and target-machine retest result.
+
+
+10. EVIDENCE REGISTER AND TECHNICAL REFERENCES
+==========================================================================
+
+Project evidence
+  [S01] User-pasted network-disable BAT, Author TGFR, Version 3.2,
+        header Date 2023-05-17. Complete pasted source inspected.
+  [S02] User-pasted Python reverse utility, Version 1.0,
+        header Date 2025-12-18. Complete pasted source inspected.
+  [S03] TGFR_Exam_Mode_v3.py. Source inspected for this journal.
+  [S04] TGFR_Exam_Mode_v3.bat. Source inspected for this journal.
+  [S05] TGFR_Exam_Mode_GUI_v4.bat. Source inspected for this journal.
+  [S06] TGFR_Exam_Mode_GUI_v4_1.bat. Source inspected for this journal.
+  [S07] v5 filename metadata, user's v5 interface screenshot and reports of
+        Calculator/proofing/layout issues; supported by later v6 legacy
+        recovery code. Complete original v5 source not inspected here.
+  [S08] TGFR_Exam_Mode_GUI_v6.bat and retained v6 development record.
+  [S09] TGFR_Exam_Mode_GUI_v6_0_1.bat, including direct diff against v6.0.
+  [S10] TGFR_Exam_Mode_GUI_v6_1.bat and its production source modules.
+  [S11] User screenshot of the TGFR Exam Mode 6.0 op_Addition exception.
+  [S12] User's 6.0.1 diagnostics generated 2026-11-20 12:28:15 and the
+        screenshot of the domain/local AppLocker policy message.
+  [S13] Retained development execution results for v6/v6.0.1/v6.1.
+  [S14] Test sources: test_applocker.ps1, test_engine.ps1,
+        test_ui_callbacks.ps1, test_ui_startup.ps1, test_legacy.ps1,
+        test_word_exam.ps1 and word/test_fixtures.ps1.
+  [S15] User's v6.1 diagnostics generated 2026-11-20 12:58:37 and two
+        screenshots of the stopped Application Identity safeguard.
+  [S16] Updated v6.1.1 AppLocker source and the retained result of 95 mocked
+        assertions, including service/preflight/legacy-restore cases.
+  [S17] diagnostics.ps1 and test_diagnostics.ps1; 20 recorded assertions.
+  [S18] User follow-up screenshot image(20261120-132046).png after v6.1.1
+        delivery, plus explicit instruction to remove the old backend.
+  [S19] New src_v7 production modules: app_control.ps1, engine.ps1, ui.ps1,
+        main.ps1 and retained word_exam.ps1.
+  [S20] tests_v7 engine/application-control/UI/placement/backend-removal
+        sources and final results: 39 engine, 66 backend, five callback,
+        ten placement cases, seven production-source/payload gate inputs.
+  [S21] recovery_command.ps1, test_recovery.ps1 and the exact packaged
+        TGFR_Exam_Mode_Policy_Recovery_v7.bat bootstrap; 62 recovery assertions
+        passed in actual ConstrainedLanguage with Windows boundaries mocked.
+
+  [S22] User-reported v7 conversion error naming
+        System.Collections.Generic.List`1[Microsoft.SecureBoot.UserConfig.Rule]
+        and the Rules parameter. The report supplies no full diagnostics,
+        exact Windows build, active session state or launch-test result.
+  [S23] v7.0.1 app_control.ps1, updated UI/help/build identity and
+        tests_v7/test_rule_binding.ps1. The new fixture exercises the
+        executable planner and strict native-type mock binding.
+
+  [S24] User screenshot reporting access denied to the protected Windows
+        CodeIntegrity ExamplePolicies AllowAll.xml template after v7.0.1.
+        It does not expose the exact ConfigCI DLL internals or the source
+        template's effective permissions and attributes.
+  [S25] v7.0.2 app_control.ps1 New-TgfrCiTemplateCopy and staged planner input;
+        updated UI/help/build product identity and template-access fixtures.
+        Test outcomes are recorded in the validation sections.
+
+Microsoft references recorded during development
+  [M01] Understand AppLocker rules and enforcement setting inheritance
+        in Group Policy
+        https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/applocker/understand-applocker-rules-and-enforcement-setting-inheritance-in-group-policy
+
+  [M02] Working with AppLocker rules
+        https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/applocker/working-with-applocker-rules
+
+  [M03] Get-AppLockerPolicy
+        https://learn.microsoft.com/en-us/powershell/module/applocker/get-applockerpolicy
+
+  [M04] Test-AppLockerPolicy
+        https://learn.microsoft.com/en-us/powershell/module/applocker/test-applockerpolicy
+
+  [M05] Word Range.NoProofing property
+        https://learn.microsoft.com/en-us/office/vba/api/word.range.noproofing
+
+  [M06] Open XML NoProof / Do Not Check Spelling or Grammar
+        https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.noproof
+
+  [M07] Manage packaged apps with AppLocker
+        https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/applocker/manage-packaged-apps-with-applocker
+
+  [M08] Requirements to use AppLocker
+        https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/applocker/requirements-to-use-applocker
+
+  [M09] Configure the Application Identity service
+        https://learn.microsoft.com/en-us/windows/security/application-security/application-control/windows-defender-application-control/applocker/configure-the-application-identity-service/
+
+  [M10] Modern, Inbox, and Microsoft Store Apps troubleshooting guidance
+        https://learn.microsoft.com/en-us/troubleshoot/windows-client/shell-experience/modern-inbox-store-apps-troubleshooting-guidance
+
+  [M11] DisallowApps / Explorer launch restriction limitations
+        https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-admx-shellcommandpromptregedittools
+
+  [M12] App Control and AppLocker overview
+        https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/appcontrol-and-applocker-overview
+
+  [M13] Guidance on creating App Control deny policies
+        https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/design/create-appcontrol-deny-policy
+
+  [M14] Manage packaged apps with App Control
+        https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/design/manage-packaged-apps-with-appcontrol
+
+  [M15] CiTool technical reference
+        https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/operations/citool-commands
+
+  [M16] Remove App Control policies
+        https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/deployment/disable-appcontrol-policies
+
+  [M17] Merge-CIPolicy; Rules parameter accepts Rule[]
+        https://learn.microsoft.com/en-us/powershell/module/configci/merge-cipolicy?view=windowsserver2025-ps
+
+  [M18] New-CIPolicyRule and user-mode rule objects
+        https://learn.microsoft.com/en-us/powershell/module/configci/new-cipolicyrule?view=windowsserver2025-ps
+
+  [M19] Microsoft WDAC Toolkit PR407: copy blocklists to and merge from temp
+        https://github.com/MicrosoftDocs/WDAC-Toolkit/pull/407
+
+  [M20] Microsoft WDAC Toolkit issue393: protected input XML access denied
+        https://github.com/MicrosoftDocs/WDAC-Toolkit/issues/393
+
+  [M21] .NET FileStream(String,FileMode) constructor and read/write access
+        https://learn.microsoft.com/en-us/dotnet/api/system.io.filestream.-ctor?view=netframework-4.8.1
+
+  [M22] Microsoft example copying AllowAll.xml before configuring/compiling
+        https://learn.microsoft.com/en-us/sql/relational-databases/security/encryption/always-encrypted-enclaves-host-guardian-service-register?view=sql-server-ver17
+
+Project-source references establish what this app does. Microsoft references
+explain the underlying APIs/policy model; they do not certify this app's
+behaviour on a particular deployed computer.
+
+
+11. INSPECTED RELEASE FINGERPRINTS
+==========================================================================
+
+These SHA-256 values identify the exact inspected release bytes. They are
+integrity references, not digital signatures or Windows test certificates.
+
+TGFR_Exam_Mode_v3.py
+  Bytes: 8865
+  SHA-256: a01e177e3021d1dbc5cb6de903a9eca2273d6d80629b195e151a02d19f04da75
+
+TGFR_Exam_Mode_v3.bat
+  Bytes: 10470
+  SHA-256: 781c59b12dabb230dd66370c3def540af7a215c0f45f6a87f1c973a9f0804039
+
+TGFR_Exam_Mode_GUI_v4.bat
+  Bytes: 13693
+  SHA-256: 41184847237726fbbb115ab57360ec33f8c11ddf2aee503c352361e0ac89caf2
+
+TGFR_Exam_Mode_GUI_v4_1.bat
+  Bytes: 15511
+  SHA-256: 0d7ffec996f8ef4be4117e58b7b76e12a6bbf2478c75ce27a2a2abdd50f9d283
+
+TGFR_Exam_Mode_GUI_v5.bat
+  Original standalone bytes not inspected; no checksum asserted.
+
+TGFR_Exam_Mode_GUI_v6.bat
+  Bytes: 115886
+  SHA-256: 13f5dfa5e6fe366bacd24e1d532d65f404859559855c07076228b4fc0d4047b1
+
+TGFR_Exam_Mode_GUI_v6_0_1.bat
+  Bytes: 116297
+  SHA-256: 98faee99d9fddd263b52211c29dcbcf075902662d6c8499af98cfb3cd0b802ae
+
+TGFR_Exam_Mode_GUI_v6_1.bat
+  Bytes: 127733
+  SHA-256: ec77a1c70b5e69d6d55021fdf74fea7981189c58be78b58cb5e44fca62369197
+
+TGFR_Exam_Mode_GUI_v6_1_1.bat
+  Bytes: 135323
+  SHA-256: de0a9c20d12e4a3339370523965e5bd65afc6db379a57fad8c63728dff46f33a
+
+TGFR_Exam_Mode_Diagnostics_v1.bat
+  Bytes: 22598
+  SHA-256: 738a1750b8a0192f0a0724b04133b9addc1fc750fa273c7d03be16d61f02ddc3
+
+TGFR_Exam_Mode_GUI_v7.bat
+  Bytes: 123868
+  SHA-256: 28dd5afe5b0c851b36980d1fae5688573947f01f9749b8611d4f4a356fcb5b53
+
+TGFR_Exam_Mode_Policy_Recovery_v7.bat
+  Bytes: 10703
+  SHA-256: e04d521199cb2ec704feab5943ca2a55a56fc404b8c5f498f8606fd5675f4ebd
+
+TGFR_Exam_Mode_GUI_v7_0_1.bat
+  Bytes: 125579
+  SHA-256: 65542d6eb85a60960381a3d54838db9996d378b56a50d73973af6c05b0c7b82c
+  Recovery companion: unchanged TGFR_Exam_Mode_Policy_Recovery_v7.bat,
+  retaining its v7.0 fingerprint above.
+
+TGFR_Exam_Mode_GUI_v7_0_2.bat
+  Bytes: 127159
+  SHA-256: 4563adac6e8e4c3a2fc1c5dd5e4a16ea413fb44007a4d21635a6fcf7341f7e51
+  Recovery companion: unchanged TGFR_Exam_Mode_Policy_Recovery_v7.bat,
+  retaining its v7.0 fingerprint above.
+
+Journal maintenance note
+  Append a new release entry and update the latest-version fields, issue
+  statuses, validation record and fingerprint list when the app changes.
+  Preserve historical errors, original scope limits and test qualifications.
+
+END OF DEVELOPMENT JOURNAL -- REVISION 1.4

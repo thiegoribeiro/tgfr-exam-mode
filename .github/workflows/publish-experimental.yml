@@ -1,0 +1,88 @@
+name: Publish experimental release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/publish-experimental.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-v7.0.2-experimental
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'thiegoribeiro/tgfr-exam-mode' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the reviewed source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Run simulated development checks
+        run: python3 scripts/run_checks.py
+
+      - name: Build and verify public release packages
+        run: python3 scripts/package_release.py
+
+      - name: Prepare release notes with permanent source links
+        env:
+          TGFR_COMMIT: ${{ github.sha }}
+          TGFR_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          text = Path('docs/release-notes-v7.0.2.md').read_text(encoding='utf-8')
+          base = 'https://github.com/' + os.environ['TGFR_REPOSITORY'] + '/blob/' + os.environ['TGFR_COMMIT'] + '/docs/'
+          for name in ('USER_GUIDE.txt', 'windows-validation.md'):
+              text = text.replace('](' + name + ')', '](' + base + name + ')')
+          Path('dist/release-body.md').write_text(text, encoding='utf-8', newline='\n')
+          PY
+
+      - name: Publish the first experimental release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TGFR_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gh release list --limit 100 --json tagName > "$RUNNER_TEMP/tgfr-existing-releases.json"
+          if python3 - "$RUNNER_TEMP/tgfr-existing-releases.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          rows = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+          sys.exit(0 if any(row['tagName'] == 'v7.0.2-experimental' for row in rows) else 1)
+          PY
+          then
+            echo 'The experimental release already exists; its tag and assets were preserved.'
+            exit 0
+          fi
+          existing_tag="$(gh api "repos/$GH_REPO/git/matching-refs/tags/v7.0.2-experimental" --jq '.[] | select(.ref == "refs/tags/v7.0.2-experimental") | .ref')"
+          if [ -n "$existing_tag" ]; then
+            tag_commit="$(gh api "repos/$GH_REPO/commits/v7.0.2-experimental" --jq .sha)"
+            if [ "$tag_commit" != "$TGFR_COMMIT" ]; then
+              echo 'An existing experimental tag points to a different commit; publishing stopped.' >&2
+              exit 1
+            fi
+          fi
+          gh release create v7.0.2-experimental \
+            dist/releases/TGFR_Exam_Mode_GUI_v7_0_2.bat \
+            dist/releases/TGFR_Exam_Mode_Policy_Recovery_v7.bat \
+            dist/releases/TGFR_Exam_Mode_v7_0_2_Public_Source.zip \
+            dist/releases/TGFR_Exam_Mode_v7_0_2_Public_Release.zip \
+            dist/releases/SHA256SUMS.txt \
+            --target "$TGFR_COMMIT" \
+            --title 'TGFR Exam Mode 7.0.2 - Experimental' \
+            --notes-file dist/release-body.md \
+            --prerelease \
+            --latest=false
