@@ -6,6 +6,20 @@
 
 A passing simulated suite establishes only the behaviours it exercises. The application's Verify action checks configuration and recorded state; it does not prove every launch route is blocked.
 
+## Field results reported 26 November 2026 — partial / unverified
+
+See [the dated J-015 test entry](journal/2026-11-26-cross-edition-testing.md) and [development journal rev. 1.5](DEVELOPMENT_JOURNAL.txt).
+
+| Reported environment | Wi-Fi | Ethernet | VPN option | Excel | Calculator | Store | Word spelling/grammar |
+|---|---|---|---|---|---|---|---|
+| Windows 10 Home 22H2 | Pass | Pass | Pass | Fail | Fail | Fail | Unreported |
+| Windows 11 Home 24H2 | Pass | Pass | Pass | Fail | Fail | Fail | Unreported |
+| Windows 11 "Pro Education" (exact edition/build unspecified) | Pass (broad user report) | Pass | Pass | Pass | Pass | Pass | Fail |
+
+**Evidence status:** user-reported results; no full native run logs, test hashes, installed Office versions, exact tested selections, or complete restore results were supplied. The main test cases below remain **Not tested / not formally recorded**, meaning this update does not falsely certify end-to-end acceptance. The VPN option means **VPN Settings-page visibility**, not guaranteed VPN connectivity blocking. Windows 10 Home is outside the current Windows 11 22H2+ documented app-control requirement. The precise label "Pro Education" is preserved as reported and requires OS edition confirmation. Application version is presumed to be the current 7.0.2 experimental build but its hash was not supplied; do not treat that inference as verified.
+
+**Next action:** reproduce each reported failure on documented builds, validate native enforcement and Word proofing, complete session restoration and restart testing, then update individual acceptance-case outcomes with per-device evidence.
+
 ## Record the test environment
 
 Use a spare workstation with local access and keep the matching recovery launcher available. Retain full recovery information privately; use anonymised values in a published report.
