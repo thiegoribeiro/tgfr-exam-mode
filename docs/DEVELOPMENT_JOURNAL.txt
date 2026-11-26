@@ -10,7 +10,7 @@ DEVELOPMENT JOURNAL AND VERSION REFERENCE
 ==========================================================================
 
 Project owner / original author: TGFR (Thiego)
-Journal revision: 1.4
+Journal revision: 1.5
 Prepared: 20 November 2026
 Latest app version documented: 7.0.2
 Latest app file: TGFR_Exam_Mode_GUI_v7_0_2.bat
@@ -1682,4 +1682,40 @@ Journal maintenance note
   statuses, validation record and fingerprint list when the app changes.
   Preserve historical errors, original scope limits and test qualifications.
 
-END OF DEVELOPMENT JOURNAL -- REVISION 1.4
+12. USER-REPORTED CROSS-EDITION ACCEPTANCE AND ENHANCEMENT REQUEST
+==========================================================================
+
+J-015 -- Cross-edition testing reported on 26 November 2026
+Evidence: USER-REPORTED, without supporting sanitised run logs.
+Detailed entry: docs/journal/2026-11-26-cross-edition-testing.md
+
+The tester reported partial passes on Windows 10 Home 22H2 and Windows 11
+Home 24H2. Wi-Fi, Ethernet and the VPN option passed; blocking desktop
+Excel, Windows Calculator and Microsoft Store failed on both systems.
+The test conditions, precise software build and recovery results were not
+provided. Windows 10 Home falls outside the current documented Windows 11
+22H2+ app-control requirement. These results must not be generalized as
+proof of either Home support or edition-wide impossibility.
+
+On a system described as "Windows 11 Pro Education" (exact edition/build
+not independently confirmed), the tester reported all other selected
+features passing, but Word spelling checking remained active. This needs
+document-level and native desktop Word investigation, not an unverified
+claim of complete Office-wide proofing enforcement.
+
+The tester also proposed an optional Wi-Fi/VPN enable action using a legacy
+TGFR BAT 3.2 script that writes PolicyManager default and current/device
+registry values and schedules a restart. Record that as PROPOSED only:
+a registry write does not establish adapter enablement or VPN reachability,
+and directly overwriting default/managed policy values without capturing
+the baseline would break the current restoration guarantees. Prefer the
+existing exact-state restore workflow; any new compatibility repair must be
+opt-in, policy-aware, journalled, per-write verified and restart-safe.
+
+No change was made to application code in response to this report.
+The latest published executable remains 7.0.2 experimental; the exact
+test executable hash and Windows editions/builds remain unconfirmed.
+Related issues: #3, #4, #5 and follow-up spell-check/network proposals.
+
+END OF DEVELOPMENT JOURNAL -- REVISION 1.5
+
